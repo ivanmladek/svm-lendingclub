@@ -11,7 +11,7 @@ def binary_status(st):
         st == 'Current' or
         st == 'Late (16-30 days)' or
         st == 'Does not meet the current credit policy.  Status:In Grace Period'):
-        return 0
+        return -1
     else:
         return 1
 
@@ -25,12 +25,15 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                                      finite.issue_d)
                        if (datetime.strptime(d,'%Y-%m-%d').year == target_y)])
     training_data = np.array([[f, ann_inc,
-                               amount,dti] for f, ann_inc,amount,dti,
+                               amount, dti, open_acc, num_inq] for f, ann_inc,amount,dti,
+                              open_acc,num_inq,
                               issue_d
                               in zip(finite.fico_range_high,
                                      finite.annual_inc,
                                      finite.loan_amnt,
                                      finite.dti,
+                                     finite.open_acc,
+                                     finite.inq_last_6mths,
                                      finite.issue_d)
                               if (datetime.strptime(issue_d,'%Y-%m-%d').year == target_y)])
     #Scale data
@@ -44,13 +47,17 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
 def main():
 training = pd.read_csv("LoanStatsNew.csv")
 
-X_scaled_2012, status_2012, scaler_2012 = prepare_data_for_year(training, 2012, def_scaler=None)
-X_scaled_2013, status_2013, _ = prepare_data_for_year(training, 2013, def_scaler=scaler_2012)
+X_scaled_2009, status_2009, scaler_2009 = prepare_data_for_year(training, 2009, def_scaler=None)
+#X_scaled_2012, status_2012, scaler_2012 = prepare_data_for_year(training, 2012, def_scaler=None)
+X_scaled_2013, status_2013, _ = prepare_data_for_year(training, 2013, def_scaler=scaler_2009)
 
 
 #Train on a grid search for gamma and C
-parameters = [{'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['poly'], 'degree': [2,3]}]
-classifier = grid_search.GridSearchCV(svm.SVC(C=1), parameters, verbose=3)
+parameters = [{'C': [0.1,1, 10, 100, 1000,10000],
+               'gamma': [10,1,0.1,0.01, 0.001],
+               'kernel': ['poly','rbf'], 'degree': [2, 3]}]
+classifier = grid_search.GridSearchCV(svm.SVC(C=1), parameters,
+                                      verbose=3, n_jobs=4)
 classifier.fit(X_scaled_2012, status_2012)
 
 #clf = svm.LinearSVC().fit(X_scaled, status)
