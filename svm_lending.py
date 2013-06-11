@@ -1,8 +1,8 @@
 #!/export/disk0/wb/python2.6/bin/python
 from sklearn import (svm, preprocessing,
                      grid_search, metrics)
+import re
 import pandas as pd
-
 from datetime import datetime
 import numpy as np
 
@@ -26,29 +26,57 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     status = np.array([binary_status(l) for l,d in zip(finite.loan_status,
                                                      finite.issue_d)
                        if (datetime.strptime(d,'%Y-%m-%d').year == target_y)])
-    training_data = np.array([[f, ann_inc,
-                               amount, dti, open_acc, num_inq,
+    training_data = np.array([[len(str(desc)),
+                               f, ann_inc,
+                               amount, dti,
+                               open_acc, total_acc,
+                               num_inq,
                                float(revol_bal),
                                np.nan_to_num(float(str(revol_util).replace("%",""))),
                                float(apr.replace("%","")),
                                np.nan_to_num(total_balance),
-                               np.nan_to_num(default120)]
-                              for f, ann_inc,amount,dti,
-                              open_acc,num_inq, revol_bal,revol_util, apr,
+                               np.nan_to_num(default120),
+                               np.nan_to_num(bankruptcies),
+                               np.nan_to_num(tot_coll_amnt),
+                               np.nan_to_num(rev_gt0),
+                               np.nan_to_num(rev_hilimit),
+                               np.nan_to_num(oldest_rev),
+                               np.nan_to_num(pub_rec),
+                               np.nan_to_num(delinq_2)]
+                              for desc, f, ann_inc,amount,dti,
+                              open_acc,total_acc, num_inq, revol_bal,revol_util, apr,
+                              emp_length,
                               total_balance,default120,
+                              bankruptcies,
+                              tot_coll_amnt,
+                              rev_gt0,
+                              rev_hilimit,
+                              oldest_rev,
+                              pub_rec,
+                              delinq_2,
                               issue_d
-                              in zip(finite.fico_range_high,
+                              in zip(finite.desc,
+                                     finite.fico_range_high,
                                      finite.annual_inc,
                                      finite.loan_amnt,
                                      finite.dti,
                                      finite.open_acc,
+                                     finite.total_acc,
                                      finite.inq_last_6mths,
                                      finite.revol_bal,
                                      finite.revol_util,
                                      finite.apr,
+                                     finite.emp_length,
                                      finite.total_bal_ex_mort,
                                      finite.num_accts_ever_120_pd,
-                                     finite.issue_d)
+                                     finite.pub_rec_bankruptcies,
+                                     finite.tot_coll_amt,
+                                     finite.num_rev_tl_bal_gt_0,
+                                     finite.total_rev_hi_lim,
+                                     finite.mo_sin_old_rev_tl_op,
+                                     finite.pub_rec_gt_100,
+                                     finite.delinq_2yrs,
+                                     finite.issue_d,)
                               if (datetime.strptime(issue_d,'%Y-%m-%d').year == target_y)])
     #Scale data
     if def_scaler == None:
@@ -61,7 +89,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
 def main():
     training = pd.read_csv("LoanStatsNew.csv")
     print training.columns
-    print [training[t][:10]  for t in training.columns]
+    print [training[t][70000:70100]  for t in training.columns]
 
     year_train = 2008
     year_predict = 2009
@@ -77,7 +105,7 @@ def main():
     ##Defaults are very uneven and thus we need to give them more weight
     classifier = grid_search.GridSearchCV(
         svm.SVC(C=1, class_weight ={-1:1, 1: 1}),
-        parameters, verbose=3, n_jobs=4,)
+        parameters, verbose=1, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
