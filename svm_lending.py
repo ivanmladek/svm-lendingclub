@@ -91,36 +91,45 @@ def main():
     print training.columns
     print [training[t][70000:70100]  for t in training.columns]
 
-    year_train = 2008
-    year_predict = 2009
+    year_train = 2011
+    year_predict = 2013
     X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, def_scaler=None)
     X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, def_scaler=scaler_init)
 
 
 #Train on a grid search for gamma and C
-    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
+    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10,],# 100, 1000],
                    'gamma': [0.1, 0.01,  0.001, 0.0001],
                    'kernel': ['poly','rbf'], 'degree': [2],
                    }]
     ##Defaults are very uneven and thus we need to give them more weight
     classifier = grid_search.GridSearchCV(
         svm.SVC(C=1, class_weight ={-1:1, 1: 1}),
-        parameters, verbose=1, n_jobs=4,)
+        parameters, verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
     print classifier
-
-#Predict
+    #Predict
     predict_test = classifier.predict(X_scaled_test)
 
-#Report
+    #Report
     print year_train, year_predict
     print metrics.classification_report(status_test, predict_test)
     print metrics.confusion_matrix(status_test, predict_test)
-#Cross validate
-#scores = cross_validation.cross_val_score(clf, iris.data, iris.target, cv=5)
-#Fit test data
+
+    #Predict current loan offer sheet
+    current_offer = pd.read_csv("InFunding2StatsNew.csv")
+    print current_offer
+    offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, 2013, def_scaler= scaler_init)
+    predict_test = classifier.predict(offer_scaled)
+
+    #Report
+    print year_train, "2013"
+    print metrics.classification_report(status_test, predict_test)
+    print metrics.confusion_matrix(status_test, predict_test)
+
+
     return 0
 
 if __name__ == '__main__':
