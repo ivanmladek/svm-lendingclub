@@ -9,9 +9,10 @@ import numpy as np
 def binary_status(st):
     if (st == 'Issued' or
         st == 'Fully Paid' or
-        st == 'Current' or
-        st == 'Late (16-30 days)' or
-        st == 'Does not meet the current credit policy.  Status:In Grace Period'):
+        st == 'Current' #or
+        #st == 'Late (16-30 days)' or
+        #st == 'Does not meet the current credit policy.  Status:In Grace Period'
+        ):
         return -1
     else:
         return 1
@@ -26,8 +27,15 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                                      finite.issue_d)
                        if (datetime.strptime(d,'%Y-%m-%d').year == target_y)])
     training_data = np.array([[f, ann_inc,
-                               amount, dti, open_acc, num_inq] for f, ann_inc,amount,dti,
-                              open_acc,num_inq,
+                               amount, dti, open_acc, num_inq,
+                               float(revol_bal),
+                               np.nan_to_num(float(str(revol_util).replace("%",""))),
+                               float(apr.replace("%","")),
+                               np.nan_to_num(total_balance),
+                               np.nan_to_num(default120)]
+                              for f, ann_inc,amount,dti,
+                              open_acc,num_inq, revol_bal,revol_util, apr,
+                              total_balance,default120,
                               issue_d
                               in zip(finite.fico_range_high,
                                      finite.annual_inc,
@@ -35,6 +43,11 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                      finite.dti,
                                      finite.open_acc,
                                      finite.inq_last_6mths,
+                                     finite.revol_bal,
+                                     finite.revol_util,
+                                     finite.apr,
+                                     finite.total_bal_ex_mort,
+                                     finite.num_accts_ever_120_pd,
                                      finite.issue_d)
                               if (datetime.strptime(issue_d,'%Y-%m-%d').year == target_y)])
     #Scale data
@@ -47,32 +60,36 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
 
 def main():
     training = pd.read_csv("LoanStatsNew.csv")
+    print training.columns
+    print [training[t][:10]  for t in training.columns]
 
-    X_scaled, status, scaler_init = prepare_data_for_year(training, 2009, def_scaler=None)
-#X_scaled_2012, status_2012, scaler_2012 = prepare_data_for_year(training, 2012, def_scaler=None)
-    X_scaled_2013, status_2013, _ = prepare_data_for_year(training, 2013, def_scaler=scaler_init)
+    year_train = 2008
+    year_predict = 2009
+    X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, def_scaler=None)
+    X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, def_scaler=scaler_init)
 
 
 #Train on a grid search for gamma and C
-    parameters = [{'C': [0.1, 1, 10, 100, 1000],
-                   'gamma': [0.1,0.01, 0.001],
-                   'kernel': ['poly','rbf'], 'degree': [2, 3]}]
-    classifier = grid_search.GridSearchCV(svm.SVC(C=1), parameters,
-                                      verbose=3, n_jobs=4)
+    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
+                   'gamma': [0.1, 0.01,  0.001, 0.0001],
+                   'kernel': ['poly','rbf'], 'degree': [2],
+                   }]
+    ##Defaults are very uneven and thus we need to give them more weight
+    classifier = grid_search.GridSearchCV(
+        svm.SVC(C=1, class_weight ={-1:1, 1: 1}),
+        parameters, verbose=3, n_jobs=4,)
+    print 'training'
     classifier.fit(X_scaled, status)
-
-#clf = svm.LinearSVC().fit(X_scaled, status)
-#C = 100.0  # SVM regularization parameter
-#rbf_svc = svm.SVC(kernel='poly', gamma=0.001, C=C).fit(X_scaled_2012,
-#                                                      status_2012)
-
-
+    print 'done training'
+    print classifier
 
 #Predict
-    predict_2013 = classifier.predict(X_scaled_2013)
-    print metrics.classification_report(status_2013, predict_2013)
-#Report
+    predict_test = classifier.predict(X_scaled_test)
 
+#Report
+    print year_train, year_predict
+    print metrics.classification_report(status_test, predict_test)
+    print metrics.confusion_matrix(status_test, predict_test)
 #Cross validate
 #scores = cross_validation.cross_val_score(clf, iris.data, iris.target, cv=5)
 #Fit test data
