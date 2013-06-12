@@ -41,7 +41,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     try:
         status = np.array([binary_status(l) for l,d in zip(finite.loan_status,
                                                            finite.list_d)
-                           if (datetime.strptime(d,'%Y-%m-%d').year == target_y)])
+                           if (datetime.strptime(d,'%Y-%m-%d').year in target_y)])
     except:
         status = [np.nan]
     print finite
@@ -96,13 +96,12 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                      finite.pub_rec_gt_100,
                                      finite.delinq_2yrs,
                                      finite.list_d,)
-                              if ( parse_year(list_d)== target_y)])
+                              if ( parse_year(list_d) in target_y)])
     #Scale data
     if def_scaler == None:
         scaler = preprocessing.StandardScaler().fit(training_data)
     else:
         scaler = def_scaler
-    print training_data[0]
     X_scaled = scaler.transform(training_data)
     return X_scaled, status, scaler
 
@@ -119,8 +118,9 @@ def main():
     print training.columns
     #print [training[t][70000:70100]  for t in training.columns]
 
-    year_train = int(opts.train)
-    year_predict = int(opts.process)
+    year_train = eval(opts.train)
+    year_predict = eval(opts.process)
+    print year_train, year_predict
     X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, def_scaler=None)
     X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, def_scaler=scaler_init)
 
