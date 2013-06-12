@@ -30,11 +30,27 @@ def parse_year(date):
     except:
         return datetime.strptime(date[0:10],'%m-%d-%Y').year
 
+def parse_finite(string):
+    try:
+        return np.nan_to_num(string)
+    except:
+        pass 0.
+
 def parse_percent(pc):
     try:
         return str(pc).replace("%","")
     except:
         return pc
+
+def current_loan_parser(filename):
+    """
+    Current file is mis-formatted and will not load with pandas
+    """
+    f = open(filename,'r')
+    lines = f.read().split("\n")
+    f.close()
+    entries = [lines[i].replace("\"","").split(",") for i in range(len(lines))]
+    return entries
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
@@ -51,24 +67,24 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     print finite
     training_data = np.array([[len(str(desc)),
                                #f,
-                               float(ann_inc),
-                               float(amount),
-                               float(dti),
-                               float(open_acc),
-                               float(total_acc),
-                               num_inq,
-                               float(revol_bal),
-                               np.nan_to_num(float(parse_percent(revol_util))),
-                               float(parse_percent(apr)),
-                               np.nan_to_num(total_balance),
-                               np.nan_to_num(default120),
-                               np.nan_to_num(bankruptcies),
-                               np.nan_to_num(tot_coll_amnt),
-                               np.nan_to_num(rev_gt0),
-                               np.nan_to_num(rev_hilimit),
-                               np.nan_to_num(oldest_rev),
-                               np.nan_to_num(pub_rec),
-                               np.nan_to_num(delinq_2)]
+                               parse_finite(ann_inc),
+                               parse_finite(amount),
+                               parse_finite(dti),
+                               parse_finite(open_acc),
+                               parse_finite(total_acc),
+                               parse_finite(num_inq),
+                               parse_finite(revol_bal),
+                               parse_finite(float(parse_percent(revol_util))),
+                               parse_finite(parse_percent(apr)),
+                               parse_finite(total_balance),
+                               parse_finite(default120),
+                               parse_finite(bankruptcies),
+                               parse_finite(tot_coll_amnt),
+                               parse_finite(rev_gt0),
+                               parse_finite(rev_hilimit),
+                               parse_finite(oldest_rev),
+                               parse_finite(pub_rec),
+                               parse_finite(delinq_2)]
                               for desc, f, ann_inc,amount,dti,
                               open_acc,total_acc, num_inq, revol_bal,revol_util, apr,
                               emp_length,
@@ -161,9 +177,11 @@ def main():
     #print scores
 
     #Predict current loan offer sheet
-    current_offer = pd.read_csv("InFunding2StatsNew.csv", quotechar="\"")
+    current_offer = pd.read_csv("InFunding2StatsNew.csv", quotechar="\"",
+                                na_filter=False)
     print current_offer
     offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
+    current_loan
     predict_offer = classifier.predict(offer_scaled)
     #Report
     print year_train, "2013"
