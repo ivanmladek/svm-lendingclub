@@ -11,7 +11,7 @@ import numpy as np
 
 #Very unevenly distributed towards non-defaults so we have to give
 #more weight to defaults
-CLASS_WEIGHTS = {-1: 1, 1: 10}
+CLASS_WEIGHTS = {-1: 1, 1: 5}
 
 def binary_status(st):
     if (st == 'Issued' or
@@ -34,7 +34,7 @@ def parse_finite(string):
     try:
         return np.nan_to_num(string)
     except:
-        pass 0.
+        return 0.
 
 def parse_percent(pc):
     try:
@@ -158,7 +158,7 @@ def main():
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
         svm.SVC(C=1, class_weight = CLASS_WEIGHTS),
-        parameters, recall_score,#zero_one_loss,
+        parameters,# zero_one_loss,
         verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
@@ -181,7 +181,7 @@ def main():
                                 na_filter=False)
     print current_offer
     offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
-    current_loan
+    #current_loan
     predict_offer = classifier.predict(offer_scaled)
     #Report
     print year_train, "2013"
