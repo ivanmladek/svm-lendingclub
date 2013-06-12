@@ -9,12 +9,16 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 
+#Very unevenly distributed towards non-defaults so we have to give
+#more weight to defaults
+CLASS_WEIGHTS = {-1: 1, 1: 10}
+
 def binary_status(st):
     if (st == 'Issued' or
         st == 'Fully Paid' or
-        st == 'Current' #or
-        #st == 'Late (16-30 days)' or
-        #st == 'Does not meet the current credit policy.  Status:In Grace Period'
+        st == 'Current' or
+        st == 'Late (16-30 days)' or
+        st == 'Does not meet the current credit policy.  Status:In Grace Period'
         ):
         return -1
     else:
@@ -46,9 +50,12 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
         status = [np.nan]
     print finite
     training_data = np.array([[len(str(desc)),
-                               f, ann_inc,
-                               amount, dti,
-                               open_acc, total_acc,
+                               #f,
+                               float(ann_inc),
+                               float(amount),
+                               float(dti),
+                               float(open_acc),
+                               float(total_acc),
                                num_inq,
                                float(revol_bal),
                                np.nan_to_num(float(parse_percent(revol_util))),
@@ -97,6 +104,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                      finite.delinq_2yrs,
                                      finite.list_d,)
                               if ( parse_year(list_d) in target_y)])
+    print training_data[0]
     #Scale data
     if def_scaler == None:
         scaler = preprocessing.StandardScaler().fit(training_data)
@@ -126,16 +134,16 @@ def main():
 
 
 #Train on a grid search for gamma and C
-    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10,],# 100, 1000],
-                   'gamma': [0.1, 0.01,  0.001, 0.0001],
+    parameters = [{'C': [1],#0.001, 0.01, 0.1, 1, 10, 100, 1000],
+                   'gamma': [0.1, 0.01,],#  0.001, 0.0001],
                    'kernel': ['poly','rbf'], 'degree': [2],
                    }]
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
-        svm.SVC(C=1, class_weight ={-1: 1, 1: 5}),
-        parameters,zero_one_loss,
-        verbose=1, n_jobs=4,)
+        svm.SVC(C=1, class_weight = CLASS_WEIGHTS),
+        parameters, recall_score,#zero_one_loss,
+        verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
@@ -148,18 +156,18 @@ def main():
     print metrics.classification_report(status_test, predict_test)
     print metrics.confusion_matrix(status_test, predict_test)
     print 'Cross-validating'
-    scores = cross_validation.cross_val_score(
-        classifier, X_scaled, status, cv=5)
-    print scores
+    #scores = cross_validation.cross_val_score(
+    #    classifier, X_scaled, status, cv=5)
+    #print scores
 
     #Predict current loan offer sheet
-    #current_offer = pd.read_csv("InFunding2StatsNew.csv")
-    #print current_offer
-    #offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, 2013, def_scaler= scaler_init)
-    #predict_offer = classifier.predict(offer_scaled)
+    current_offer = pd.read_csv("InFunding2StatsNew.csv", quotechar="\"")
+    print current_offer
+    offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
+    predict_offer = classifier.predict(offer_scaled)
     #Report
-    #print year_train, "2013"
-    #print predict_offer
+    print year_train, "2013"
+    print predict_offer
 
     return 0
 
