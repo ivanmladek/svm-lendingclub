@@ -98,6 +98,40 @@ def current_loan_parser(filename):
     entries = [lines[i].replace("\"","").split(",") for i in range(len(lines))]
     return entries
 
+def train_test(X_scaled, status):
+    #Train on a grid search for gamma and C
+    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100],#, 1000],
+                   'gamma': [0.1, 0.01,  0.001, 0.0001],
+                   'kernel': ['poly','rbf'], 'degree': [2],
+                   'class_weight': [{-1: 1, 1: 1},
+                                    {-1: 1, 1: 2},
+                                    {-1: 1, 1: 3},
+                                    {-1: 1, 1: 5},
+                                    ]
+                   }]
+    ##Defaults are very uneven and thus we need to give them more
+    ##weight, perform cross-validation
+    classifier = grid_search.GridSearchCV(
+        svm.SVC(C=1, gamma=0.1, kernel='poly',
+                class_weight = {-1: 1, 1: 1}),
+        parameters,# zero_one_loss,
+        verbose=3, n_jobs=4,)
+    print 'training'
+    classifier.fit(X_scaled, status)
+    print 'done training'
+    return classifier
+
+def predict_current(filename, scaler_init, classifier):
+     #Predict current loan offer sheet
+    current_offer = pd.read_csv(filename, quotechar="\"",
+                                na_filter=False)
+    offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
+    #current_loan
+    predict_offer = classifier.predict(offer_scaled)
+    #Report
+    print year_train, "2013"
+    print predict_offer
+
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
     finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
@@ -110,7 +144,6 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                            if (datetime.strptime(d,'%Y-%m-%d').year in target_y)])
     except:
         status = [np.nan]
-    print finite
 
     #Check validity of finite values
     check_validity(finite)
@@ -200,27 +233,8 @@ def main():
     X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, def_scaler=None)
     X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, def_scaler=scaler_init)
 
-
-#Train on a grid search for gamma and C
-    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100],#, 1000],
-                   'gamma': [0.1, 0.01,  0.001, 0.0001],
-                   'kernel': ['poly','rbf'], 'degree': [2],
-                   'class_weight': [{-1: 1, 1: 1},
-                                    {-1: 1, 1: 2},
-                                    {-1: 1, 1: 3},
-                                    {-1: 1, 1: 5},
-                                    ]
-                   }]
-    ##Defaults are very uneven and thus we need to give them more
-    ##weight, perform cross-validation
-    classifier = grid_search.GridSearchCV(
-        svm.SVC(C=1,),# class_weight = CLASS_WEIGHTS),
-        parameters,# zero_one_loss,
-        verbose=3, n_jobs=4,)
-    print 'training'
-    classifier.fit(X_scaled, status)
-    print 'done training'
-    print classifier
+    #Train
+    classifier = train_test(X_scaled, status)
     #Predict
     predict_test = classifier.predict(X_scaled_test)
 
@@ -233,16 +247,7 @@ def main():
     #    classifier, X_scaled, status, cv=5)
     #print scores
 
-    #Predict current loan offer sheet
-    current_offer = pd.read_csv("InFunding2StatsNew.csv", quotechar="\"",
-                                na_filter=False)
-    print current_offer
-    offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
-    #current_loan
-    predict_offer = classifier.predict(offer_scaled)
-    #Report
-    print year_train, "2013"
-    print predict_offer
+    predict_current("InFunding2StatsNew.csv", scaler_init, classifier)
 
     return 0
 
