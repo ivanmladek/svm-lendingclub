@@ -8,10 +8,22 @@ import re
 import pandas as pd
 from datetime import datetime
 import numpy as np
+from matplotlib import pyplot as plt
 
 #Very unevenly distributed towards non-defaults so we have to give
 #more weight to defaults
-CLASS_WEIGHTS = {-1: 1, 1: 5}
+CLASS_WEIGHTS = {-1: 1, 1: 2}
+
+
+def plot_histograms(finite, check_dictionary):
+    for c in check_dictionary:
+        try:
+            plt.figure()
+            plt.hist(finite[c][~np.isnan(finite[c])], bins=50)
+            plt.title(c)
+            plt.show()
+        except:
+            print c+' failed'
 
 def binary_status(st):
     if (st == 'Issued' or
@@ -42,6 +54,40 @@ def parse_percent(pc):
     except:
         return pc
 
+CHECK_DICTIONARY = {
+    'fico_range_high':[600.,850.],
+    'annual_inc':[10000.,500000.],
+    'loan_amnt':[100.,40000.],
+    'dti':[0.,40.],
+    'open_acc':[0.,60.],
+    'total_acc':[0.,100.],
+    'inq_last_6mths':[0.,15.],
+    'revol_bal':[0.,200000.],
+    'total_bal_ex_mort':[0.,5000000.],
+    'num_accts_ever_120_pd':[0.,20.],
+    'pub_rec_bankruptcies':[0.,5.],
+    'tot_coll_amt':[0., 10000.],
+    'num_rev_tl_bal_gt_0':[0.,40.],
+    'total_rev_hi_lim':[0.,1000000.],
+    'mo_sin_old_rev_tl_op':[0.,800.],
+    'pub_rec_gt_100':[0.,10.],
+    'delinq_2yrs':[0.,10.],
+    }
+
+def check_validity(finite):
+    """
+    CHeck basic validity of all entries in the incoming dataset
+    """
+    for c in CHECK_DICTIONARY:
+        check_array = np.array(finite[c][~np.isnan(finite[c])])
+        out_of_boundc_c = np.flatnonzero((np.logical_and(
+                check_array<= CHECK_DICTIONARY[c][0],
+                check_array>= CHECK_DICTIONARY[c][1])))
+        if len(out_of_boundc_c) == 0:
+            print c+' within bounds'
+        else:
+            raise Exception(str(c+' out of bounds'))
+
 def current_loan_parser(filename):
     """
     Current file is mis-formatted and will not load with pandas
@@ -65,6 +111,11 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     except:
         status = [np.nan]
     print finite
+
+    #Check validity of finite values
+    check_validity(finite)
+    #plot_histograms(finite, CHECK_DICTIONARY)
+
     training_data = np.array([[len(str(desc)),
                                #f,
                                parse_finite(ann_inc),
@@ -75,7 +126,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                parse_finite(num_inq),
                                parse_finite(revol_bal),
                                parse_finite(float(parse_percent(revol_util))),
-                               parse_finite(parse_percent(apr)),
+                               #parse_finite(parse_percent(apr)),
                                parse_finite(total_balance),
                                parse_finite(default120),
                                parse_finite(bankruptcies),
@@ -139,6 +190,7 @@ def main():
     opts, args = parser.parse_args()
 
     training = pd.read_csv("LoanStatsNew.csv")
+
     print training.columns
     #print [training[t][70000:70100]  for t in training.columns]
 
@@ -150,14 +202,19 @@ def main():
 
 
 #Train on a grid search for gamma and C
-    parameters = [{'C': [1],#0.001, 0.01, 0.1, 1, 10, 100, 1000],
-                   'gamma': [0.1, 0.01,],#  0.001, 0.0001],
+    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100],#, 1000],
+                   'gamma': [0.1, 0.01,  0.001, 0.0001],
                    'kernel': ['poly','rbf'], 'degree': [2],
+                   'class_weight': [{-1: 1, 1: 1},
+                                    {-1: 1, 1: 2},
+                                    {-1: 1, 1: 3},
+                                    {-1: 1, 1: 5},
+                                    ]
                    }]
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
-        svm.SVC(C=1, class_weight = CLASS_WEIGHTS),
+        svm.SVC(C=1,),# class_weight = CLASS_WEIGHTS),
         parameters,# zero_one_loss,
         verbose=3, n_jobs=4,)
     print 'training'
