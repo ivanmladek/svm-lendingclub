@@ -104,9 +104,9 @@ def train_test(X_scaled, status):
                    'gamma': [0.1, 0.01,  0.001, 0.0001],
                    'kernel': ['poly','rbf'], 'degree': [2],
                    'class_weight': [{-1: 1, 1: 1},
-                                    {-1: 1, 1: 2},
-                                    {-1: 1, 1: 3},
-                                    {-1: 1, 1: 5},
+                                    #{-1: 1, 1: 2},
+                                    #{-1: 1, 1: 3},
+                                    #{-1: 1, 1: 5},
                                     ]
                    }]
     ##Defaults are very uneven and thus we need to give them more
@@ -115,21 +115,26 @@ def train_test(X_scaled, status):
         svm.SVC(C=1, gamma=0.1, kernel='poly',
                 class_weight = {-1: 1, 1: 1}),
         parameters,# zero_one_loss,
-        verbose=3, n_jobs=4,)
+        verbose=1, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
     return classifier
 
-def predict_current(filename, scaler_init, classifier):
+def predict_current(filename, scaler_init, classifier, year_train):
      #Predict current loan offer sheet
-    current_offer = pd.read_csv(filename, quotechar="\"",
-                                na_filter=False)
+    #See
+    #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
+    #for trailing delimiters
+    current_offer = pd.read_csv(filename,
+                    na_values=['\" \"','\"null\"'],
+                    skiprows=1, delimiter=",",
+                    index_col=False)
     offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
     #current_loan
     predict_offer = classifier.predict(offer_scaled)
     #Report
-    print year_train, "2013"
+    print  year_train, "2013"
     print predict_offer
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
@@ -158,7 +163,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                parse_finite(total_acc),
                                parse_finite(num_inq),
                                parse_finite(revol_bal),
-                               parse_finite(float(parse_percent(revol_util))),
+                               parse_finite(parse_percent(revol_util)),
                                #parse_finite(parse_percent(apr)),
                                parse_finite(total_balance),
                                parse_finite(default120),
@@ -235,6 +240,7 @@ def main():
 
     #Train
     classifier = train_test(X_scaled, status)
+    print classifier
     #Predict
     predict_test = classifier.predict(X_scaled_test)
 
@@ -247,7 +253,8 @@ def main():
     #    classifier, X_scaled, status, cv=5)
     #print scores
 
-    predict_current("InFunding2StatsNew.csv", scaler_init, classifier)
+    predict_current("InFunding2StatsNew.csv", scaler_init,
+                    classifier, year_train)
 
     return 0
 
