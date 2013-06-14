@@ -2,6 +2,9 @@ from fpdf import FPDF
 
 title='Lending Club Loan Applicant Ranking'
 
+def isodd(num):
+    return num & 1 and True or False
+
 class PDF(FPDF):
         def header(self):
                 #Arial bold 15
@@ -46,9 +49,19 @@ class PDF(FPDF):
                 #Times 12
                 self.set_font('Times','',8)
                 #Output justified text
-                self.multi_cell(0,5,txt)
-                #Line break
-                self.ln()
+                self.set_fill_color(256,256,256)
+                for i,t in enumerate(txt.split("\n")):
+                    try:
+                        default, status, offid, url, apr = t.split(",")
+                        self.cell(0,5,",".join([default, status, offid, apr]), border=1, fill=1,link=url.replace("\'","") )
+                        if isodd(i):
+                            self.set_fill_color(256,256,256)
+                        else:
+                            self.set_fill_color(230,230,230)
+                        #Line break
+                        self.ln()
+                    except:
+                        pass
                 #Mention in italics
                 self.set_font('','I')
                 self.cell(0,5,'(end of excerpt)')

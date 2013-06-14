@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import pdf as ppdf
 
 #TODO AUC score function
-
+#Calculate KS score for 2007,2008,2009 loans
 
 def rfe_optim(classifier, X_scaled, status):
     """
@@ -169,22 +169,34 @@ def predict_current(filename, scaler_init, classifier, year_train):
         raw_str = ''
         for k in CHECK_DICTIONARY.keys():
             raw_str = raw_str+','+k+':'+str(current_offer[k][i])
-        current_info_prob.append([predict_prob[i][0], predict_prob[i][1],
-                                  predict_offer[i], raw_str,current_offer['apr'][i]])
+        current_info_prob.append([predict_prob[i][1],
+                                  predict_offer[i],
+                                  current_offer['id'][i],
+                                  current_offer['url'][i],
+                                  current_offer['apr'][i]])
     #Sort list according to probabilities
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
     #Print to a file
-    f = open('predicted.csv','w')
-    for c in curr_sorted:
+    f = open('predicted-best.csv','w')
+    for c in curr_sorted[0:100]:
         f.write("%s\n" % c)
     f.close()
+    f1 = open('predicted-worst.csv','w')
+    for c in curr_sorted[-100:]:
+        f1.write("%s\n" % c)
+    f1.close()
+
 
     #Plot PDF
     pdf=ppdf.PDF()
     pdf.set_title('Lending Club Loan Applicant Ranking')
     pdf.set_author('SVM Risk Consulting')
-    pdf.print_chapter(1,'A RUNAWAY REEF','predicted.csv')
+    pdf.print_chapter(1,'DEFAULT PROBABILITIES - BEST 100',
+                      'predicted-best.csv')
+    pdf.print_chapter(2,'DEFAULT PROBABILITIES - WORST 100',
+                      'predicted-worst.csv')
+
     pdf.output('tuto3.pdf','F')
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
@@ -205,28 +217,29 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     #plot_histograms(finite, CHECK_DICTIONARY)
 
     training_data = np.array([[#len(str(desc)),
-                               #f,
-                               #parse_finite(ann_inc),
-                               parse_finite(amount),
-                               parse_finite(dti),
-                               #parse_finite(open_acc),
-                               #parse_finite(total_acc),
-                               parse_finite(num_inq),
-                               #parse_finite(revol_bal),
-                               #parse_finite(parse_percent(revol_util)),
+                #f,
+                #parse_finite(ann_inc),
+                #parse_finite(term),
+                parse_finite(amount),
+                parse_finite(dti),
+                #parse_finite(open_acc),
+                #parse_finite(total_acc),
+                parse_finite(num_inq),
+                #parse_finite(revol_bal),
+                #parse_finite(parse_percent(revol_util)),
 
-                               #parse_finite(parse_percent(apr)),
-                               #parse_finite(total_balance),
-                               #parse_finite(default120),
-                               #parse_finite(bankruptcies),
-                               #parse_finite(tot_coll_amnt),
-                               #parse_finite(rev_gt0),
-                               #parse_finite(rev_hilimit),
-                               #parse_finite(oldest_rev),
-                               #parse_finite(pub_rec),
-                               #parse_finite(delinq_2)
-                               ]
-                              for desc, f, ann_inc,amount,dti,
+                #parse_finite(parse_percent(apr)),
+                #parse_finite(total_balance),
+                #parse_finite(default120),
+                #parse_finite(bankruptcies),
+                #parse_finite(tot_coll_amnt),
+                #parse_finite(rev_gt0),
+                #parse_finite(rev_hilimit),
+                #parse_finite(oldest_rev),
+                #parse_finite(pub_rec),
+                #parse_finite(delinq_2)
+                ]
+                              for term, desc, f, ann_inc,amount,dti,
                               open_acc,total_acc, num_inq, revol_bal,revol_util, apr,
                               emp_length,
                               total_balance,default120,
@@ -238,7 +251,8 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                               pub_rec,
                               delinq_2,
                               list_d
-                              in zip(finite.desc,
+                              in zip(finite.term,
+                                     finite.desc,
                                      finite.fico_range_high,
                                      finite.annual_inc,
                                      finite.loan_amnt,
