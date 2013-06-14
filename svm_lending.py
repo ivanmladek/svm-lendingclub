@@ -12,6 +12,7 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
+import pdf as ppdf
 
 #TODO AUC score function
 
@@ -172,9 +173,19 @@ def predict_current(filename, scaler_init, classifier, year_train):
                                   predict_offer[i], raw_str,current_offer['apr'][i]])
     #Sort list according to probabilities
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
-    for c in curr_sorted:
-        print c
 
+    #Print to a file
+    f = open('predicted.csv','w')
+    for c in curr_sorted:
+        f.write("%s\n" % c)
+    f.close()
+
+    #Plot PDF
+    pdf=ppdf.PDF()
+    pdf.set_title('Lending Club Loan Applicant Ranking')
+    pdf.set_author('SVM Risk Consulting')
+    pdf.print_chapter(1,'A RUNAWAY REEF','predicted.csv')
+    pdf.output('tuto3.pdf','F')
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
@@ -203,6 +214,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                                parse_finite(num_inq),
                                #parse_finite(revol_bal),
                                #parse_finite(parse_percent(revol_util)),
+
                                #parse_finite(parse_percent(apr)),
                                #parse_finite(total_balance),
                                #parse_finite(default120),
