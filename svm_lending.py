@@ -2,6 +2,8 @@
 from sklearn import (svm, preprocessing,
                      grid_search, metrics,
                      cross_validation)
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.feature_selection import RFECV
 from sklearn.metrics import (zero_one_loss,
                              recall_score)
 import re
@@ -13,6 +15,29 @@ from matplotlib import pyplot as plt
 #Very unevenly distributed towards non-defaults so we have to give
 #more weight to defaults
 CLASS_WEIGHTS = {-1: 1, 1: 2}
+
+def rfe_optim(classifier, X_scaled, status):
+    """
+    Perform recursive feature elimination
+    http://scikit-learn.org/dev/auto_examples/plot_rfe_with_\
+    cross_validation.html#example-plot-rfe-with-cross-validation-py
+    """
+    # Create the RFE object and compute a cross-validated score.
+    svc = svm.SVC(kernel="linear")
+    rfecv = RFECV(estimator=svc, step=1,
+                  cv=StratifiedKFold(status, 2),
+                  loss_func=zero_one_loss)
+    rfecv.fit(X_scaled, status)
+    print("Optimal number of features : %d" % rfecv.n_features_)
+
+    # Plot number of features VS. cross-validation scores
+    import pylab as pl
+    pl.figure()
+    pl.xlabel("Number of features selected")
+    pl.ylabel("Cross validation score (nb of misclassifications)")
+    pl.plot(range(1, len(rfecv.cv_scores_) + 1), rfecv.cv_scores_)
+    pl.show()
+
 
 
 def plot_histograms(finite, check_dictionary):
@@ -100,22 +125,22 @@ def current_loan_parser(filename):
 
 def train_test(X_scaled, status):
     #Train on a grid search for gamma and C
-    parameters = [{'C': [0.001, 0.01, 0.1, 1, 10, 100],#, 1000],
-                   'gamma': [0.1, 0.01,  0.001, 0.0001],
-                   'kernel': ['poly','rbf'], 'degree': [2],
+    parameters = [{'C': [1],
+                #0.001, 0.01, 0.1, 1],#, 10],#, 100],#, 1000],
+                   'gamma': [0.1],#, 0.01,  0.001, 0.0001],
+                   'kernel': ['poly','rbf','linear'], 'degree': [2],
                    'class_weight': [{-1: 1, 1: 1},
                                     #{-1: 1, 1: 2},
-                                    #{-1: 1, 1: 3},
+                                    #{-1: 1, 1: 5},
                                     #{-1: 1, 1: 5},
                                     ]
                    }]
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
-        svm.SVC(C=1, gamma=0.1, kernel='poly',
-                class_weight = {-1: 1, 1: 1}),
-        parameters,# zero_one_loss,
-        verbose=1, n_jobs=4,)
+        svm.SVC(C=1),
+        parameters, cv=5,#zero_one_loss,
+        verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
@@ -154,26 +179,27 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     check_validity(finite)
     #plot_histograms(finite, CHECK_DICTIONARY)
 
-    training_data = np.array([[len(str(desc)),
-                               #f,
-                               parse_finite(ann_inc),
+    training_data = np.array([[#len(str(desc)),
+                               f,
+                               #parse_finite(ann_inc),
                                parse_finite(amount),
-                               parse_finite(dti),
-                               parse_finite(open_acc),
-                               parse_finite(total_acc),
-                               parse_finite(num_inq),
-                               parse_finite(revol_bal),
-                               parse_finite(parse_percent(revol_util)),
+                               #parse_finite(dti),
+                               #parse_finite(open_acc),
+                               #parse_finite(total_acc),
+                               #parse_finite(num_inq),
+                               #parse_finite(revol_bal),
+                               #parse_finite(parse_percent(revol_util)),
                                #parse_finite(parse_percent(apr)),
-                               parse_finite(total_balance),
-                               parse_finite(default120),
-                               parse_finite(bankruptcies),
-                               parse_finite(tot_coll_amnt),
-                               parse_finite(rev_gt0),
-                               parse_finite(rev_hilimit),
-                               parse_finite(oldest_rev),
-                               parse_finite(pub_rec),
-                               parse_finite(delinq_2)]
+                               #parse_finite(total_balance),
+                               #parse_finite(default120),
+                               #parse_finite(bankruptcies),
+                               #parse_finite(tot_coll_amnt),
+                               #parse_finite(rev_gt0),
+                               #parse_finite(rev_hilimit),
+                               #parse_finite(oldest_rev),
+                               #parse_finite(pub_rec),
+                               #parse_finite(delinq_2)
+                               ]
                               for desc, f, ann_inc,amount,dti,
                               open_acc,total_acc, num_inq, revol_bal,revol_util, apr,
                               emp_length,
@@ -241,6 +267,8 @@ def main():
     #Train
     classifier = train_test(X_scaled, status)
     print classifier
+    #Perform RFE
+    rfe_optim(classifier, X_scaled, status)
     #Predict
     predict_test = classifier.predict(X_scaled_test)
 
