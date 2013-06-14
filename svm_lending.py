@@ -6,11 +6,15 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import (zero_one_loss,
                              recall_score)
+from operator import itemgetter
 import re
 import pandas as pd
 from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
+
+#TODO AUC score function
+
 
 def rfe_optim(classifier, X_scaled, status):
     """
@@ -126,9 +130,9 @@ def train_test(X_scaled, status):
                    'gamma': [0.1],#, 0.01,  0.001, 0.0001],
                    'kernel': ['poly','rbf','linear'], 'degree': [2],
                    'class_weight': [{0: 1, 1: 1},
-                                    {0: 1, 1: 2},
-                                    {0: 1, 1: 3},
-                                    {0: 1, 1: 5},
+                                    #{0: 1, 1: 2},
+                                    #{0: 1, 1: 3},
+                                    #{0: 1, 1: 5},
                                     ]
                    }]
     ##Defaults are very uneven and thus we need to give them more
@@ -151,18 +155,26 @@ def predict_current(filename, scaler_init, classifier, year_train):
                     na_values=['\" \"','\"null\"'],
                     skiprows=1, delimiter=",",
                     index_col=False)
-    offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
+    offer_scaled, offer_status, _ = prepare_data_for_year(
+        current_offer, [2013], def_scaler= scaler_init)
     #current_loan
     predict_offer = classifier.predict(offer_scaled)
     predict_prob = classifier.predict_proba(offer_scaled)
     #Report
     print  year_train, "2013"
     print predict_offer
-    for i in range(10):
+    current_info_prob=list()
+    for i in range(len(predict_offer)):
         raw_str = ''
         for k in CHECK_DICTIONARY.keys():
             raw_str = raw_str+','+k+':'+str(current_offer[k][i])
-        print str(predict_offer[i])+str(predict_prob[i])+raw_str+","+str(current_offer.apr[i])
+        current_info_prob.append([predict_prob[i][0], predict_prob[i][1],
+                                  predict_offer[i], raw_str,current_offer['apr'][i]])
+    #Sort list according to probabilities
+    curr_sorted = sorted(current_info_prob, key=itemgetter(0))
+    for c in curr_sorted:
+        print c
+
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
