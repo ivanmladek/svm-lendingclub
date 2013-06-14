@@ -12,10 +12,6 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 
-#Very unevenly distributed towards non-defaults so we have to give
-#more weight to defaults
-CLASS_WEIGHTS = {-1: 1, 1: 2}
-
 def rfe_optim(classifier, X_scaled, status):
     """
     Perform recursive feature elimination
@@ -57,7 +53,7 @@ def binary_status(st):
         st == 'Late (16-30 days)' or
         st == 'Does not meet the current credit policy.  Status:In Grace Period'
         ):
-        return -1
+        return 0
     else:
         return 1
 
@@ -129,17 +125,17 @@ def train_test(X_scaled, status):
                 #0.001, 0.01, 0.1, 1],#, 10],#, 100],#, 1000],
                    'gamma': [0.1],#, 0.01,  0.001, 0.0001],
                    'kernel': ['poly','rbf','linear'], 'degree': [2],
-                   'class_weight': [{-1: 1, 1: 1},
-                                    #{-1: 1, 1: 2},
-                                    #{-1: 1, 1: 5},
-                                    #{-1: 1, 1: 5},
+                   'class_weight': [{0: 1, 1: 1},
+                                    {0: 1, 1: 2},
+                                    {0: 1, 1: 3},
+                                    {0: 1, 1: 5},
                                     ]
                    }]
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
-        svm.SVC(C=1),
-        parameters, cv=5,#zero_one_loss,
+        svm.SVC(C=1, probability=True),
+        parameters, zero_one_loss,cv=5,
         verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
@@ -158,9 +154,15 @@ def predict_current(filename, scaler_init, classifier, year_train):
     offer_scaled, offer_status, _ = prepare_data_for_year(current_offer, [2013], def_scaler= scaler_init)
     #current_loan
     predict_offer = classifier.predict(offer_scaled)
+    predict_prob = classifier.predict_proba(offer_scaled)
     #Report
     print  year_train, "2013"
     print predict_offer
+    for i in range(10):
+        raw_str = ''
+        for k in CHECK_DICTIONARY.keys():
+            raw_str = raw_str+','+k+':'+str(current_offer[k][i])
+        print str(predict_offer[i])+str(predict_prob[i])+raw_str+","+str(current_offer.apr[i])
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
@@ -180,13 +182,13 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     #plot_histograms(finite, CHECK_DICTIONARY)
 
     training_data = np.array([[#len(str(desc)),
-                               f,
+                               #f,
                                #parse_finite(ann_inc),
                                parse_finite(amount),
-                               #parse_finite(dti),
+                               parse_finite(dti),
                                #parse_finite(open_acc),
                                #parse_finite(total_acc),
-                               #parse_finite(num_inq),
+                               parse_finite(num_inq),
                                #parse_finite(revol_bal),
                                #parse_finite(parse_percent(revol_util)),
                                #parse_finite(parse_percent(apr)),
@@ -268,7 +270,7 @@ def main():
     classifier = train_test(X_scaled, status)
     print classifier
     #Perform RFE
-    rfe_optim(classifier, X_scaled, status)
+    #rfe_optim(classifier, X_scaled, status)
     #Predict
     predict_test = classifier.predict(X_scaled_test)
 
