@@ -13,6 +13,7 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 import pdf as ppdf
+from datetime import datetime
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
@@ -164,6 +165,7 @@ def predict_current(filename, scaler_init, classifier, year_train):
     #Report
     print  year_train, "2013"
     print predict_offer
+    print current_offer
     current_info_prob=list()
     for i in range(len(predict_offer)):
         raw_str = ''
@@ -173,17 +175,24 @@ def predict_current(filename, scaler_init, classifier, year_train):
                                   predict_offer[i],
                                   current_offer['id'][i],
                                   current_offer['url'][i],
-                                  current_offer['apr'][i]])
+                                  current_offer['loan_amnt'][i],
+                                  current_offer['term'][i],
+                                  current_offer['apr'][i],
+                                  current_offer['purpose'][i],
+                                  current_offer['review_status'][i],
+                                  ]
+                                 )
     #Sort list according to probabilities
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
     #Print to a file
+    best_count = 40
     f = open('predicted-best.csv','w')
-    for c in curr_sorted[0:100]:
+    for c in curr_sorted[0:best_count]:
         f.write("%s\n" % c)
     f.close()
     f1 = open('predicted-worst.csv','w')
-    for c in curr_sorted[-100:]:
+    for c in curr_sorted[-1*best_count:]:
         f1.write("%s\n" % c)
     f1.close()
 
@@ -192,12 +201,13 @@ def predict_current(filename, scaler_init, classifier, year_train):
     pdf=ppdf.PDF()
     pdf.set_title('Lending Club Loan Applicant Ranking')
     pdf.set_author('SVM Risk Consulting')
-    pdf.print_chapter(1,'DEFAULT PROBABILITIES - BEST 100',
+    pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
                       'predicted-best.csv')
-    pdf.print_chapter(2,'DEFAULT PROBABILITIES - WORST 100',
+    pdf.print_chapter(len(curr_sorted) - best_count,
+                      'RATING OF BORROWERS - WORST '+str(best_count),
                       'predicted-worst.csv')
-
-    pdf.output('tuto3.pdf','F')
+    filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
+    pdf.output(filename,'F')
 
 def prepare_data_for_year(training, target_y, def_scaler=None):
     #Weed out NaNs
