@@ -2,8 +2,7 @@
 from sklearn import (svm, preprocessing,
                      grid_search, metrics,
                      cross_validation)
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.feature_selection import RFECV
+
 from sklearn.metrics import (zero_one_loss,
                              recall_score)
 from operator import itemgetter
@@ -12,9 +11,13 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
-import pdf as ppdf
 from datetime import datetime
 import urllib2
+import numpy as np
+
+import pdf as ppdf
+from evaluators import rfe_optim, forest_optim
+
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
@@ -31,29 +34,6 @@ def check_funding(url):
         return float(float_str_clean[0])
     except:
         return 0.0
-
-def rfe_optim(classifier, X_scaled, status):
-    """
-    Perform recursive feature elimination
-    http://scikit-learn.org/dev/auto_examples/plot_rfe_with_\
-    cross_validation.html#example-plot-rfe-with-cross-validation-py
-    """
-    # Create the RFE object and compute a cross-validated score.
-    svc = svm.SVC(kernel="linear")
-    rfecv = RFECV(estimator=svc, step=1,
-                  cv=StratifiedKFold(status, 2),
-                  loss_func=zero_one_loss)
-    rfecv.fit(X_scaled, status)
-    print("Optimal number of features : %d" % rfecv.n_features_)
-
-    # Plot number of features VS. cross-validation scores
-    import pylab as pl
-    pl.figure()
-    pl.xlabel("Number of features selected")
-    pl.ylabel("Cross validation score (nb of misclassifications)")
-    pl.plot(range(1, len(rfecv.cv_scores_) + 1), rfecv.cv_scores_)
-    pl.show()
-
 
 
 def plot_histograms(finite, check_dictionary):
@@ -94,6 +74,35 @@ def parse_percent(pc):
         return str(pc).replace("%","")
     except:
         return pc
+
+PURPOSE_DICT = {
+    'debt_consolidation':9,
+    np.nan:7.,
+    'educational':12.,
+    'renewable_energy':13.,
+    'car':6.,
+    'medical':14.,
+    'wedding':3.,
+    'vacation':4.,
+    'credit_card':10.,
+    'other':7.,
+    'moving':11.,
+    'house':8.,
+    'small_business':2.,
+    'major_purchase':5.,
+    'home_improvement':1.,
+    'Home improvement':1.,
+    'Business':2.,
+    'Wedding expenses':3.,
+    'Vacation':4.,
+    'Major purchase':5.,
+    'Car financing':6.,
+    'Other':7.,
+    'Home buying':8.,
+    'Debt consolidation':9.,
+    'Credit card refinancing':10.,
+    'Moving and relocation':11.,
+    }
 
 CHECK_DICTIONARY = {
     'fico_range_high':[600.,850.],
@@ -162,7 +171,8 @@ def train_test(X_scaled, status):
     print 'done training'
     return classifier
 
-def predict_current(filename, scaler_init, classifier, year_train):
+def predict_current(filename, scaler_init, classifier,
+                    year_train, update_current):
      #Predict current loan offer sheet
     #See
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
@@ -179,15 +189,16 @@ def predict_current(filename, scaler_init, classifier, year_train):
     #Report
     print  year_train, "2013"
     print predict_offer
-    print current_offer
     current_info_prob=list()
     for i in range(len(predict_offer)):
         raw_str = ''
         for k in CHECK_DICTIONARY.keys():
             raw_str = raw_str+','+k+':'+str(current_offer[k][i])
         #Check loan is still open
-        funded_pcnt = check_funding(current_offer['url'][i])
-        print i,funded_pcnt
+        if update_current:
+            funded_pcnt = check_funding(current_offer['url'][i])
+        else:
+            funded_pcnt = 0.
         if funded_pcnt < 100.:
             current_info_prob.append([predict_prob[i][1],
                                       predict_offer[i],
@@ -204,7 +215,7 @@ def predict_current(filename, scaler_init, classifier, year_train):
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
     #Print to a file
-    best_count = 500
+    best_count = 50
     f = open('predicted-best.csv','w')
     for c in curr_sorted[0:best_count]:
         f.write("%s\n" % ",".join(map(str,c)))
@@ -244,30 +255,55 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     check_validity(finite)
     #plot_histograms(finite, CHECK_DICTIONARY)
 
-    training_data = np.array([[#len(str(desc)),
-                #f,
-                #parse_finite(ann_inc),
-                #parse_finite(term),
-                parse_finite(amount),
-                parse_finite(dti),
-                #parse_finite(open_acc),
-                #parse_finite(total_acc),
-                parse_finite(num_inq),
-                #parse_finite(revol_bal),
-                #parse_finite(parse_percent(revol_util)),
+    #Optimal number of features : 4
+    #Feature ranking:
+    #1. feature 9 (0.233677)
+    #2. feature 1 (0.193933)
+    #3. feature 10 (0.090055)
+    #4. feature 5 (0.080833)
+    #5. feature 8 (0.076548)
+    #6. feature 7 (0.065637)
+    #7. feature 2 (0.063432)
+    #8. feature 4 (0.061500)
+    #9. feature 0 (0.061454)
+    #10. feature 6 (0.049553)
+    #11. feature 21 (0.017243)
+    #12. feature 15 (0.006136)
+    #13. feature 12 (0.000000)
+    #14. feature 11 (0.000000)
+    #15. feature 20 (0.000000)
+    #16. feature 13 (0.000000)
+    #17. feature 14 (0.000000)
+    #18. feature 16 (0.000000)
+    #19. feature 17 (0.000000)
+    #20. feature 3 (0.000000)
+    #21. feature 18 (0.000000)
+    #22. feature 19 (0.000000)
 
-                #parse_finite(parse_percent(apr)),
-                #parse_finite(total_balance),
-                #parse_finite(default120),
-                #parse_finite(bankruptcies),
-                #parse_finite(tot_coll_amnt),
-                #parse_finite(rev_gt0),
-                #parse_finite(rev_hilimit),
-                #parse_finite(oldest_rev),
-                #parse_finite(pub_rec),
-                #parse_finite(delinq_2)
+    training_data = np.array([[#len(str(desc)), #0
+                f, #1
+                #parse_finite(ann_inc), #2
+                #parse_finite(term), #3
+                #parse_finite(amount), #4
+                parse_finite(dti), #5
+                #parse_finite(PURPOSE_DICT[purpose]),#6
+                #parse_finite(open_acc), #7
+                #parse_finite(total_acc), #8
+                parse_finite(num_inq), #9
+                parse_finite(revol_bal), #10
+                #parse_finite(parse_percent(revol_util)),#11
+                #parse_finite(parse_percent(apr)),#12
+                #parse_finite(total_balance), #13
+                #parse_finite(default120), #14
+                #parse_finite(bankruptcies), #15
+                #parse_finite(tot_coll_amnt), #16
+                #parse_finite(rev_gt0), #17
+                #parse_finite(rev_hilimit), #18
+                #parse_finite(oldest_rev), #19
+                #parse_finite(pub_rec), #20
+                #parse_finite(delinq_2) #21
                 ]
-                              for term, desc, f, ann_inc,amount,dti,
+                              for term, desc,purpose, f, ann_inc,amount,dti,
                               open_acc,total_acc, num_inq, revol_bal,revol_util, apr,
                               emp_length,
                               total_balance,default120,
@@ -281,6 +317,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
                               list_d
                               in zip(finite.term,
                                      finite.desc,
+                                     finite.purpose,
                                      finite.fico_range_high,
                                      finite.annual_inc,
                                      finite.loan_amnt,
@@ -312,7 +349,7 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     X_scaled = scaler.transform(training_data)
     return X_scaled, status, scaler
 
-def main():
+def main(update_current=False):
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-t", "--train",
@@ -337,7 +374,9 @@ def main():
     print classifier
     #Perform RFE
     #rfe_optim(classifier, X_scaled, status)
-    #Predict
+    #forest_optim(X_scaled, status)
+
+   #Predict
     predict_test = classifier.predict(X_scaled_test)
 
     #Report
@@ -350,7 +389,7 @@ def main():
     #print scores
 
     predict_current("InFunding2StatsNew.csv", scaler_init,
-                    classifier, year_train)
+                    classifier, year_train, update_current)
 
     return 0
 
