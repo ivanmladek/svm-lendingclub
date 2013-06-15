@@ -9,7 +9,7 @@ from sklearn.datasets import make_classification
 from sklearn.ensemble import ExtraTreesClassifier
 import numpy as np
 
-def rfe_optim(classifier, X_scaled, status):
+def rfe_optim(X_scaled, status):
     """
     Perform recursive feature elimination
     http://scikit-learn.org/dev/auto_examples/plot_rfe_with_\
