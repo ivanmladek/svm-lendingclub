@@ -14,9 +14,23 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pdf as ppdf
 from datetime import datetime
+import urllib2
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
+
+
+def check_funding(url):
+    """
+    Check realtime funding levels and only
+    """
+    try:
+        text = urllib2.urlopen(url).read()
+        float_str = text[text.index(' funded')-10:text.index(' funded')-1]
+        float_str_clean = re.findall("\d+.\d+", float_str)
+        return float(float_str_clean[0])
+    except:
+        return 0.0
 
 def rfe_optim(classifier, X_scaled, status):
     """
@@ -171,29 +185,33 @@ def predict_current(filename, scaler_init, classifier, year_train):
         raw_str = ''
         for k in CHECK_DICTIONARY.keys():
             raw_str = raw_str+','+k+':'+str(current_offer[k][i])
-        current_info_prob.append([predict_prob[i][1],
-                                  predict_offer[i],
-                                  current_offer['id'][i],
-                                  current_offer['url'][i],
-                                  current_offer['loan_amnt'][i],
-                                  current_offer['term'][i],
-                                  current_offer['apr'][i],
-                                  current_offer['purpose'][i],
-                                  current_offer['review_status'][i],
-                                  ]
-                                 )
+        #Check loan is still open
+        funded_pcnt = check_funding(current_offer['url'][i])
+        print i,funded_pcnt
+        if funded_pcnt < 100.:
+            current_info_prob.append([predict_prob[i][1],
+                                      predict_offer[i],
+                                      current_offer['id'][i],
+                                      current_offer['url'][i],
+                                      current_offer['loan_amnt'][i],
+                                      current_offer['funded_amnt'][i],
+                                      current_offer['term'][i],
+                                      current_offer['apr'][i],
+                                      current_offer['purpose'][i],
+                                      current_offer['review_status'][i],
+                                      ])
     #Sort list according to probabilities
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
     #Print to a file
-    best_count = 40
+    best_count = 500
     f = open('predicted-best.csv','w')
     for c in curr_sorted[0:best_count]:
-        f.write("%s\n" % c)
+        f.write("%s\n" % ",".join(map(str,c)))
     f.close()
     f1 = open('predicted-worst.csv','w')
     for c in curr_sorted[-1*best_count:]:
-        f1.write("%s\n" % c)
+        f1.write("%s\n" % ",".join(map(str,c)))
     f1.close()
 
 

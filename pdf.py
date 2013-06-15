@@ -59,6 +59,8 @@ class PDF(FPDF):
                           border=1, fill=1,)
                 self.cell(20, 5 , 'Loan amount',
                           border=1, fill=1,)
+                self.cell(20, 5 , 'Funded amount',
+                          border=1, fill=1,)
                 self.cell(10, 5 , 'Term',
                           border=1, fill=1,)
                 self.cell(12, 5 , 'APR %',
@@ -76,6 +78,8 @@ class PDF(FPDF):
                           border=1, fill=1,)
                 self.cell(20, 5 , '[LendingClub]',
                           border=1, fill=1,)
+                self.cell(20, 5 , '[LendingClub]',
+                          border=1, fill=1,)
                 self.cell(10, 5 , '[LC]',
                           border=1, fill=1,)
                 self.cell(12, 5 , '[LC]',
@@ -87,7 +91,7 @@ class PDF(FPDF):
                 self.ln()
                 for i,t in enumerate(txt.split("\n")):
                     try:
-                        default, status, offid, url,amnt, term,  apr, purpose, status = t.split(",")
+                        default, status, offid, url,amnt,funded_amnt, term,  apr, purpose, status = t.split(",")
                         d_f = float(default.replace("[",""))*100
                         if d_f < 30.:
                             self.set_fill_color(127,255,0)
@@ -105,6 +109,8 @@ class PDF(FPDF):
                         self.cell(15, 5 , offid,
                                   border=1, fill=1,link=url)
                         self.cell(20, 5 , amnt,
+                                  border=1, fill=1,)
+                        self.cell(20, 5 , funded_amnt,
                                   border=1, fill=1,)
                         self.cell(10, 5 , term,
                                   border=1, fill=1,)
