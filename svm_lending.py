@@ -124,6 +124,24 @@ CHECK_DICTIONARY = {
     'delinq_2yrs':[0.,10.],
     }
 
+def columns_both_training_predict(train, test):
+    """
+    Get a list of numerical columns common to both training
+    and test dataset.
+    """
+    #TODO remove member_id
+    float_train =[c for c,d in zip(train.columns,
+                                   train.dtypes)
+                  if (d == 'float64' or
+                      d == 'int64')]
+    float_test =[c for c,d in zip(test.columns,
+                                  test.dtypes)
+                 if  (d == 'float64' or
+                      d == 'int64')]
+    return set.intersection(
+        set(float_train),
+        set(float_test))
+
 def check_validity(finite):
     """
     CHeck basic validity of all entries in the incoming dataset
@@ -153,36 +171,34 @@ def train_test(X_scaled, status):
     parameters = [{'C': [1],
                 #0.001, 0.01, 0.1, 1],#, 10],#, 100],#, 1000],
                    'gamma': [0.1],#, 0.01,  0.001, 0.0001],
-                   'kernel': ['poly','rbf','linear'], 'degree': [2],
+                   'kernel': ['poly','linear', 'rbf'], 'degree': [2],
                    'class_weight': [{0: 1, 1: 1},
                                     #{0: 1, 1: 2},
                                     #{0: 1, 1: 3},
                                     #{0: 1, 1: 5},
-                                    ]
+                                    ],
                    }]
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
         svm.SVC(C=1, probability=True),
-        parameters, zero_one_loss,cv=5,
+        parameters,# zero_one_loss,
+        cv=5,
         verbose=3, n_jobs=4,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
     return classifier
 
-def predict_current(filename, scaler_init, classifier,
+def predict_current(current_offer, common_float_columns,
+                    scaler_init, classifier,
                     year_train, update_current):
      #Predict current loan offer sheet
     #See
-    #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
-    #for trailing delimiters
-    current_offer = pd.read_csv(filename,
-                    na_values=['\" \"','\"null\"'],
-                    skiprows=1, delimiter=",",
-                    index_col=False)
+
     offer_scaled, offer_status, _ = prepare_data_for_year(
-        current_offer, [2013], def_scaler= scaler_init)
+        current_offer, [2013], common_float_columns,
+        def_scaler= scaler_init)
     #current_loan
     predict_offer = classifier.predict(offer_scaled)
     predict_prob = classifier.predict_proba(offer_scaled)
@@ -238,7 +254,8 @@ def predict_current(filename, scaler_init, classifier,
     filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
     pdf.output(filename,'F')
 
-def prepare_data_for_year(training, target_y, def_scaler=None):
+def prepare_data_for_year(training, target_y, float_columns,
+                          def_scaler=None):
     #Weed out NaNs
     finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
     finite = training.take(finite_ix)
@@ -260,11 +277,19 @@ def prepare_data_for_year(training, target_y, def_scaler=None):
     #emp_length,addr_state,mths_since_recent_inq
     #TODO Basically take all numeric values and run random forest
     #feature ranking on them
+    #It is much easier to predict defaults with some payment data i.e.
+    #not at loan origination but throughout the lifetime of the loan
     print finite
-    float_columns =[c for c,d in zip(finite.columns,
-                                       finite.dtypes)
-                    if d == 'float64']
     print float_columns
+    for i,f in enumerate(float_columns):
+        print i,f
+    #[2008] [2009]
+    #          precision    recall  f1-score   support
+    #      0       0.93      0.99      0.96      4147
+    #      1       0.95      0.73      0.83      1159
+    #avg / total   0.93      0.93      0.93      5306
+    #[[4103   44]
+    #[ 309  850]]
     training_data = np.nan_to_num(np.array(
             [finite[f] for f in float_columns])).transpose()[year_index,:]
     print training_data.shape
@@ -289,21 +314,27 @@ def main(update_current=False):
     opts, args = parser.parse_args()
 
     training = pd.read_csv("LoanStatsNew.csv")
-
-    print training.columns
-    #print [training[t][70000:70100]  for t in training.columns]
-
+    #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
+    #for trailing delimiters
+    current_offer = pd.read_csv("InFunding2StatsNew.csv",
+                    na_values=['\" \"','\"null\"'],
+                    skiprows=1, delimiter=",",
+                    index_col=False)
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
     print year_train, year_predict
-    X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, def_scaler=None)
-    X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, def_scaler=scaler_init)
+    common_float_columns = columns_both_training_predict(
+        training, current_offer)
 
+    X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
+    X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
+
+
+    print "Random Forest optimization"
+    forest_optim(X_scaled, status)
     #Perform RFE
     print "RFE optimization"
     #rfe_optim(X_scaled, status)
-    print "Random Forest optimization"
-    forest_optim(X_scaled, status)
 
     #Train
     classifier = train_test(X_scaled, status)
@@ -321,8 +352,9 @@ def main(update_current=False):
     #    classifier, X_scaled, status, cv=5)
     #print scores
 
-    predict_current("InFunding2StatsNew.csv", scaler_init,
-                    classifier, year_train, update_current)
+    predict_current(current_offer, common_float_columns,
+                    scaler_init, classifier, year_train,
+                    update_current)
 
     return 0
 
