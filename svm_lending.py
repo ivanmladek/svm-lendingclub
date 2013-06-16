@@ -190,7 +190,8 @@ def train_test(X_scaled, status):
     print 'done training'
     return classifier
 
-def predict_current(current_offer, common_float_columns,
+def predict_current(current_offer, features_to_train,
+                    common_float_columns,
                     scaler_init, classifier,
                     year_train, update_current):
      #Predict current loan offer sheet
@@ -200,8 +201,8 @@ def predict_current(current_offer, common_float_columns,
         current_offer, [2013], common_float_columns,
         def_scaler= scaler_init)
     #current_loan
-    predict_offer = classifier.predict(offer_scaled)
-    predict_prob = classifier.predict_proba(offer_scaled)
+    predict_offer = classifier.predict(offer_scaled[:, features_to_train])
+    predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
     #Report
     print  year_train, "2013"
     print predict_offer
@@ -261,12 +262,12 @@ def prepare_data_for_year(training, target_y, float_columns,
     finite = training.take(finite_ix)
 
     #Prepare training and test data
-    #try:
-    year_index = [i for i,d in enumerate(finite.list_d)
-                  if (datetime.strptime(d,'%Y-%m-%d').year in target_y)]
-    status = np.array([binary_status(l) for l in finite.loan_status[year_index]])
-    #except:
-    #    status = [np.nan]
+    try:
+        year_index = [i for i,d in enumerate(finite.list_d)
+                      if (parse_year(d) in target_y)]
+        status = np.array([binary_status(l) for l in finite.loan_status[year_index]])
+    except:
+        status = [np.nan]
 
     #Check validity of finite values
     check_validity(finite)
@@ -331,28 +332,23 @@ def main(update_current=False):
 
 
     print "Random Forest optimization"
-    forest_optim(X_scaled, status)
+    features_to_train = forest_optim(X_scaled, status)
     #Perform RFE
     print "RFE optimization"
-    #rfe_optim(X_scaled, status)
+    rfe_optim(X_scaled, status)
 
     #Train
-    classifier = train_test(X_scaled, status)
+    classifier = train_test(X_scaled[:,features_to_train], status)
     print classifier
 
    #Predict
-    predict_test = classifier.predict(X_scaled_test)
+    predict_test = classifier.predict(X_scaled_test[:,features_to_train])
 
     #Report
     print year_train, year_predict
     print metrics.classification_report(status_test, predict_test)
     print metrics.confusion_matrix(status_test, predict_test)
-    print 'Cross-validating'
-    #scores = cross_validation.cross_val_score(
-    #    classifier, X_scaled, status, cv=5)
-    #print scores
-
-    predict_current(current_offer, common_float_columns,
+    predict_current(current_offer,features_to_train, common_float_columns,
                     scaler_init, classifier, year_train,
                     update_current)
 

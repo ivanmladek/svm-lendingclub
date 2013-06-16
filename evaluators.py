@@ -32,7 +32,7 @@ def rfe_optim(X_scaled, status):
     pl.show()
 
 
-def forest_optim(X_scaled, status):
+def forest_optim(X_scaled, status, FEAT_TOL=0.05):
     """
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
     plot_forest_importances.html#example-ensemble-plot-forest-importances-py
@@ -47,9 +47,14 @@ def forest_optim(X_scaled, status):
 
     # Print the feature ranking
     print "Feature ranking:"
+    features_to_train = list()
 
     for f in xrange(len(X_scaled[0])):
-        print "%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]])
+        print "%d. feature %d (%f)" % (
+            f + 1,
+            indices[f], importances[indices[f]])
+        if importances[indices[f]] > FEAT_TOL:
+            features_to_train.append(indices[f])
 
     # Plot the feature importances of the trees and of the forest
     import pylab as pl
@@ -63,3 +68,4 @@ def forest_optim(X_scaled, status):
     pl.plot(xrange(len(importances[indices])),
             importances[indices], "b")
     pl.show()
+    return features_to_train
