@@ -305,6 +305,14 @@ def prepare_data_for_year(training, target_y, float_columns,
     X_scaled = scaler.transform(training_data)
     return X_scaled, status, scaler
 
+def trailing_delimiter_parser(filename):
+    current_offer = pd.read_csv(filename,
+                                na_values=['\" \"','\"null\"'],
+                                skiprows=1, delimiter=",",
+                                index_col=False)
+    return current_offer
+
+
 def main(update_current=False):
     from optparse import OptionParser
     parser = OptionParser()
@@ -316,15 +324,14 @@ def main(update_current=False):
                       default="LoanStatsNew.csv")
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
+    parser.add_option("-x", "--current_parser",
+                      default=trailing_delimiter_parser)
     opts, args = parser.parse_args()
 
     training = pd.read_csv(opts.train_file)
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
     #for trailing delimiters
-    current_offer = pd.read_csv(opts.test_file,
-                    na_values=['\" \"','\"null\"'],
-                    skiprows=1, delimiter=",",
-                    index_col=False)
+    current_offer = opts.current_parser(opts.test_file)
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
     print year_train, year_predict
