@@ -312,12 +312,16 @@ def main(update_current=False):
                       default=2008,)
     parser.add_option("-p", "--process",
                       default=2009)
+    parser.add_option("-f", "--train_file",
+                      default="LoanStatsNew.csv")
+    parser.add_option("-i", "--test_file",
+                      default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
 
-    training = pd.read_csv("LoanStatsNew.csv")
+    training = pd.read_csv(opts.train_file)
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
     #for trailing delimiters
-    current_offer = pd.read_csv("InFunding2StatsNew.csv",
+    current_offer = pd.read_csv(opts.test_file,
                     na_values=['\" \"','\"null\"'],
                     skiprows=1, delimiter=",",
                     index_col=False)
