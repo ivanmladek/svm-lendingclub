@@ -21,7 +21,8 @@ from evaluators import rfe_optim, forest_optim
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
-
+# TODO for eahc run output details into a txt with
+#columns used, model details and confusion matrix
 
 def check_funding(url):
     """
