@@ -32,7 +32,7 @@ def rfe_optim(X_scaled, status):
     pl.show()
     return rfecv.n_features_
 
-def forest_optim(X_scaled, status, FEAT_TOL=0.05):
+def forest_optim(X_scaled, status, FEAT_TOL=0.01):
     """
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
     plot_forest_importances.html#example-ensemble-plot-forest-importances-py
