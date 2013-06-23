@@ -226,7 +226,7 @@ def predict_current(current_offer, features_to_train,
                                       current_offer['term'][i],
                                       current_offer['apr'][i],
                                       current_offer['purpose'][i],
-                                      current_offer['review_status'][i],
+                                      #current_offer['review_status'][i],
                                       ])
     #Sort list according to probabilities
     curr_sorted = sorted(current_info_prob, key=itemgetter(0))
@@ -312,6 +312,13 @@ def trailing_delimiter_parser(filename):
                                 index_col=False)
     return current_offer
 
+def standard_parser(filename):
+    return pd.read_csv(filename)
+
+parser_options = {"InFunding2StatsNew.csv": trailing_delimiter_parser,
+                  "LoanStatsNew.csv": standard_parser,
+                  }
+
 
 def main(update_current=False):
     from optparse import OptionParser
@@ -324,14 +331,12 @@ def main(update_current=False):
                       default="LoanStatsNew.csv")
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
-    parser.add_option("-x", "--current_parser",
-                      default=trailing_delimiter_parser)
     opts, args = parser.parse_args()
 
-    training = pd.read_csv(opts.train_file)
+    training = parser_options[opts.train_file](opts.train_file)
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
     #for trailing delimiters
-    current_offer = opts.current_parser(opts.test_file)
+    current_offer = parser_options[opts.test_file](opts.test_file)
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
     print year_train, year_predict
@@ -344,9 +349,12 @@ def main(update_current=False):
 
     print "Random Forest optimization"
     features_to_train = forest_optim(X_scaled, status)
+    print features_to_train
     #Perform RFE
     print "RFE optimization"
-    rfe_optim(X_scaled, status)
+    #n_feat_optimal = rfe_optim(X_scaled, status)
+    #print 'optimal features'
+    #print features_to_train[0:n_feat_optimal]
 
     #Train
     classifier = train_test(X_scaled[:,features_to_train], status)

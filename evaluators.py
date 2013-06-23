@@ -30,7 +30,7 @@ def rfe_optim(X_scaled, status):
     pl.ylabel("Cross validation score (nb of misclassifications)")
     pl.plot(range(1, len(rfecv.cv_scores_) + 1), rfecv.cv_scores_)
     pl.show()
-
+    return rfecv.n_features_
 
 def forest_optim(X_scaled, status, FEAT_TOL=0.05):
     """
@@ -50,11 +50,11 @@ def forest_optim(X_scaled, status, FEAT_TOL=0.05):
     features_to_train = list()
 
     for f in xrange(len(X_scaled[0])):
-        print "%d. feature %d (%f)" % (
-            f + 1,
-            indices[f], importances[indices[f]])
         if importances[indices[f]] > FEAT_TOL:
             features_to_train.append(indices[f])
+            print "%d. feature %d (%f)" % (
+                f + 1,
+                indices[f], importances[indices[f]])
 
     # Plot the feature importances of the trees and of the forest
     import pylab as pl
