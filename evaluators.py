@@ -1,6 +1,12 @@
 from sklearn import (svm, preprocessing,
                      grid_search, metrics,
                      cross_validation)
+from sklearn import ensemble as ens
+from sklearn import linear_model as lm
+from sklearn import tree as tr
+from sklearn import datasets
+from random import sample
+from sklearn import grid_search
 from sklearn.feature_selection import RFECV
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.metrics import (zero_one_loss,
@@ -11,6 +17,49 @@ import pylab as pl
 from sklearn.datasets import make_classification
 from sklearn.ensemble import ExtraTreesClassifier
 import numpy as np
+from scipy.stats import ks_2samp
+
+#From
+#http://stackoverflow.com/questions/14363833/joblib-parallel-pool-closed-error
+n_samp = 1000
+svm_cs = 100000
+svm_maxiter=100000
+en_params = {
+    'Poly SVM':{
+        'eng':svm.SVC(cache_size=svm_cs,max_iter=svm_maxiter),
+        'params':{'kernel':('poly','rbf'),'degree':[2,5],
+                  'C':[.1,1,5,10,20,40,80,160,320]}},
+    'RandomForestClassifier':{
+        'eng':ens.RandomForestClassifier(),
+        'params':{'n_estimators':[100,500,1000,2000,3000],
+                  'min_samples_split':[2,4,6,8,10]}},
+    'ExtraForestClassifier':{
+        'eng':ens.ExtraTreesClassifier(),
+        'params':{'n_estimators':[100,500,1000,2000,3000],
+                  'min_samples_split':[2,4,6,8,10],
+                  'min_samples_leaf':[2,4,6,8,10]}},
+    'LogisticRegression':{'eng':lm.LogisticRegression(),
+                          'params':{'C':[.01,.1,10,20,30,40,50,100,200],
+                                    }},
+
+    'DecisionTrees':{'eng':tr.DecisionTreeClassifier(),
+                     'params':{
+            'min_samples_split':[2,4,6,8,10],
+            'min_samples_leaf':[2,4,6,8,10],
+            'min_density':[.05,.1,.2,.4,.6],
+            }},
+    }
+
+parameters = [{'C': [1],
+               #0.001, 0.01, 0.1, 1],#, 10],#, 100],#, 1000],
+               'gamma': [0.1],#, 0.01,  0.001, 0.0001],
+               'kernel': ['poly','linear', 'rbf'], 'degree': [2],
+               'class_weight': [{0: 1, 1: 1},
+                                #{0: 1, 1: 2},
+                                #{0: 1, 1: 3},
+                                #{0: 1, 1: 5},
+                                ],
+               }]
 
 def rfe_optim(X_scaled, status):
     """
@@ -35,13 +84,13 @@ def rfe_optim(X_scaled, status):
     pl.show()
     return rfecv.n_features_
 
-def roc(X, y, n_f=10):
+def roc(X, y,classifier,  n_f=10):
     """
     From http://scikit-learn.org/dev/auto_examples/plot_roc_crossval.html#example-plot-roc-crossval-py
     """
     # Run classifier with crossvalidation and plot ROC curves
     cv = StratifiedKFold(y, n_folds=n_f)
-    classifier = svm.SVC(kernel='linear', probability=True)
+    #classifier = svm.SVC(kernel='linear', probability=True)
 
     mean_tpr = 0.0
     mean_fpr = np.linspace(0, 1, 100)

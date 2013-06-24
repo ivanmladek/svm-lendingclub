@@ -16,12 +16,13 @@ import urllib2
 import numpy as np
 
 import pdf as ppdf
-from evaluators import rfe_optim, forest_optim, roc
+from evaluators import (rfe_optim, forest_optim, roc,
+                        parameters)
 
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
-# TODO for eahc run output details into a txt with
+# TODO for each run output details into a txt with
 #columns used, model details and confusion matrix
 
 def check_funding(url):
@@ -168,17 +169,7 @@ def current_loan_parser(filename):
     return entries
 
 def train_test(X_scaled, status):
-    #Train on a grid search for gamma and C
-    parameters = [{'C': [1],
-                #0.001, 0.01, 0.1, 1],#, 10],#, 100],#, 1000],
-                   'gamma': [0.1],#, 0.01,  0.001, 0.0001],
-                   'kernel': ['poly','linear', 'rbf'], 'degree': [2],
-                   'class_weight': [{0: 1, 1: 1},
-                                    #{0: 1, 1: 2},
-                                    #{0: 1, 1: 3},
-                                    #{0: 1, 1: 5},
-                                    ],
-                   }]
+    #TODO Try more classifiers
     ##Defaults are very uneven and thus we need to give them more
     ##weight, perform cross-validation
     classifier = grid_search.GridSearchCV(
@@ -285,13 +276,6 @@ def prepare_data_for_year(training, target_y, float_columns,
     print float_columns
     for i,f in enumerate(float_columns):
         print i,f
-    #[2008] [2009]
-    #          precision    recall  f1-score   support
-    #      0       0.93      0.99      0.96      4147
-    #      1       0.95      0.73      0.83      1159
-    #avg / total   0.93      0.93      0.93      5306
-    #[[4103   44]
-    #[ 309  850]]
     training_data = np.nan_to_num(np.array(
             [finite[f] for f in float_columns])).transpose()[year_index,:]
     print training_data.shape
@@ -352,9 +336,6 @@ def main(update_current=False):
     features_to_train = forest_optim(X_scaled, status)
     print features_to_train
 
-    print 'ROC computation'
-    roc(X_scaled[:,features_to_train], status)
-
 
     #Perform RFE
     print "RFE optimization"
@@ -365,6 +346,8 @@ def main(update_current=False):
     #Train
     classifier = train_test(X_scaled[:,features_to_train], status)
     print classifier
+    print 'ROC computation'
+    roc(X_scaled[:,features_to_train], status, classifier)
 
    #Predict
     predict_test = classifier.predict(X_scaled_test[:,features_to_train])
