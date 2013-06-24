@@ -115,7 +115,7 @@ def roc(X, y,classifier,  n_f=10):
     mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
     ks_score(mean_fpr, mean_tpr)
-    #ks_score = ks_2samp(mean_fpr, mean_tpr)
+    print ks_2samp(mean_fpr, mean_tpr)
     pl.plot(mean_fpr, mean_tpr, 'k--',
             label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
 

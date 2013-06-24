@@ -345,9 +345,10 @@ def main(update_current=False):
 
     #Train
     classifier = train_test(X_scaled[:,features_to_train], status)
-    print classifier
+    print classifier.best_estimator_
     print 'ROC computation'
-    roc(X_scaled[:,features_to_train], status, classifier)
+    roc(X_scaled[:,features_to_train], status,
+        classifier.best_estimator_)
 
    #Predict
     predict_test = classifier.predict(X_scaled_test[:,features_to_train])
