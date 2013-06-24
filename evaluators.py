@@ -84,6 +84,10 @@ def rfe_optim(X_scaled, status):
     pl.show()
     return rfecv.n_features_
 
+def ks_score(tpr, fpr):
+    for i,(t, f) in enumerate(zip(tpr, fpr)):
+        print i, t, f, float(t-i/100.), float(f-i/100.)
+
 def roc(X, y,classifier,  n_f=10):
     """
     From http://scikit-learn.org/dev/auto_examples/plot_roc_crossval.html#example-plot-roc-crossval-py
@@ -110,6 +114,8 @@ def roc(X, y,classifier,  n_f=10):
     mean_tpr /= len(cv)
     mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
+    ks_score(mean_fpr, mean_tpr)
+    #ks_score = ks_2samp(mean_fpr, mean_tpr)
     pl.plot(mean_fpr, mean_tpr, 'k--',
             label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
 
