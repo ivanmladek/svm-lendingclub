@@ -16,7 +16,7 @@ import urllib2
 import numpy as np
 
 import pdf as ppdf
-from evaluators import rfe_optim, forest_optim
+from evaluators import rfe_optim, forest_optim, roc
 
 
 #TODO AUC score function
@@ -351,6 +351,11 @@ def main(update_current=False):
     print "Random Forest optimization"
     features_to_train = forest_optim(X_scaled, status)
     print features_to_train
+
+    print 'ROC computation'
+    roc(X_scaled[:,features_to_train], status)
+
+
     #Perform RFE
     print "RFE optimization"
     #n_feat_optimal = rfe_optim(X_scaled, status)

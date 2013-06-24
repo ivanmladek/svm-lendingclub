@@ -4,7 +4,10 @@ from sklearn import (svm, preprocessing,
 from sklearn.feature_selection import RFECV
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.metrics import (zero_one_loss,
-                             recall_score)
+                             recall_score,
+                             roc_curve, auc)
+from scipy import interp
+import pylab as pl
 from sklearn.datasets import make_classification
 from sklearn.ensemble import ExtraTreesClassifier
 import numpy as np
@@ -32,6 +35,44 @@ def rfe_optim(X_scaled, status):
     pl.show()
     return rfecv.n_features_
 
+def roc(X, y, n_f=10):
+    """
+    From http://scikit-learn.org/dev/auto_examples/plot_roc_crossval.html#example-plot-roc-crossval-py
+    """
+    # Run classifier with crossvalidation and plot ROC curves
+    cv = StratifiedKFold(y, n_folds=n_f)
+    classifier = svm.SVC(kernel='linear', probability=True)
+
+    mean_tpr = 0.0
+    mean_fpr = np.linspace(0, 1, 100)
+    all_tpr = []
+
+    for i, (train, test) in enumerate(cv):
+        probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
+        # Compute ROC curve and area the curve
+        fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1])
+        mean_tpr += interp(mean_fpr, fpr, tpr)
+        mean_tpr[0] = 0.0
+        roc_auc = auc(fpr, tpr)
+        pl.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)'
+                % (i, roc_auc))
+    pl.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
+
+    mean_tpr /= len(cv)
+    mean_tpr[-1] = 1.0
+    mean_auc = auc(mean_fpr, mean_tpr)
+    pl.plot(mean_fpr, mean_tpr, 'k--',
+            label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
+
+    pl.xlim([-0.05, 1.05])
+    pl.ylim([-0.05, 1.05])
+    pl.xlabel('False Positive Rate')
+    pl.ylabel('True Positive Rate')
+    pl.title('Receiver operating characteristic example')
+    pl.legend(loc="lower right")
+    pl.show()
+
+
 def forest_optim(X_scaled, status, FEAT_TOL=0.01):
     """
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
@@ -57,7 +98,7 @@ def forest_optim(X_scaled, status, FEAT_TOL=0.01):
                 indices[f], importances[indices[f]])
 
     # Plot the feature importances of the trees and of the forest
-    import pylab as pl
+
     pl.figure()
     pl.title("Feature importances")
 
