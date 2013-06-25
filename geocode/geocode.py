@@ -69,9 +69,12 @@ def find_match_in_state(state, city, zip_state, alternate=False):
         #TODO Large cities span multiple zipcodes,
         #need to return all zipcodes
         if city[:1].lower() == prim_city[:1].lower():
-            distances.append([z,pop,prim_city, float(dameraulevenshtein(
-                            city.lower(),
-                            prim_city.lower()))])
+            d = float(dameraulevenshtein(
+                    city.lower(),
+                    prim_city.lower()))
+            distances.append([z,pop,prim_city, d])
+            if d == 0.0:
+                break
         #loop through acceptable cities if alternate is True
         if isinstance(acc_city, str) and alternate == True:
             for acc in acc_city.split(","):
