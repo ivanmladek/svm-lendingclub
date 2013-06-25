@@ -58,19 +58,27 @@ def read_zips_into_states(filename):
         states_zip[state].append(record)
     return states_zip
 
-def find_match_in_state(state, city, zip_state):
+def find_match_in_state(state, city, zip_state, alternate=False):
     """
     Find the city in the state that best matches
     """
     all_cities = zip_state[state]
     distances = list()
-    for z,typ,prim_city,acc_city,un_city,_,_,_,_,_,_,_,_,_,_,_  in all_cities:
+    for z,typ,prim_city,acc_city,un_city,_,_,_,_,_,_,_,_,_,pop,_  in all_cities:
         #First letters have to match
+        #TODO Large cities span multiple zipcodes,
+        #need to return all zipcodes
         if city[:1].lower() == prim_city[:1].lower():
-            distances.append([z,prim_city, float(dameraulevenshtein(
+            distances.append([z,pop,prim_city, float(dameraulevenshtein(
                             city.lower(),
                             prim_city.lower()))])
-    nearest_match = min(distances, key = lambda x: x[2])
+        #loop through acceptable cities if alternate is True
+        if isinstance(acc_city, str) and alternate == True:
+            for acc in acc_city.split(","):
+                distances.append([z,pop,acc, float(dameraulevenshtein(
+                                city.lower(),
+                                acc.lower()))])
+    nearest_match = min(distances, key = lambda x: x[3])
     return nearest_match
 
 def main():
