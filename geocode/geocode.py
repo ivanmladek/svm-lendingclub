@@ -94,13 +94,17 @@ def find_match_in_state(state, city, zip_state, alternate=False):
 def main():
     zip_state = read_zips_into_states("zip_code_database.csv",
                                       "ACS_11_5YR_DP03_with_ann.csv")
-    in_file = "../LoanStatsNew.csv"
-    lending_corpus= pd.read_csv(in_file)
-
+    in_file = "../InFunding2StatsNew.csv"
+    #lending_corpus= pd.read_csv(in_file)
+    lending_corpus = pd.read_csv(in_file,
+                                 na_values=['\" \"','\"null\"'],
+                                 skiprows=1, delimiter=",",
+                                 index_col=False)
+    df = pd.DataFrame()
     for _, row in lending_corpus.iterrows():
         nearest_city_match = find_match_in_state(row['addr_state'],
                                                  row['addr_city'], zip_state)
-        print row['addr_state'], row['addr_city'], nearest_city_match[0]
+        print row['addr_state'], row['addr_city'], nearest_city_match[0]['primary_city'], nearest_city_match[1]
 
 if __name__ == '__main__':
     main()
