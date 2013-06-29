@@ -49,13 +49,19 @@ def dameraulevenshtein(seq1, seq2):
                 thisrow[y] = min(thisrow[y], twoago[y - 2] + 1)
     return thisrow[len(seq2) - 1]
 
-def read_zips_into_states(filename):
-    print "Reading zips"
+def read_zips_into_states(filename_zip, filename_census):
+
     states_zip = defaultdict(list)
-    zips = pd.read_csv(filename)
-    for record in zips.values:
-        state= record[5]
-        states_zip[state].append(record)
+    print "Reading zips"
+    z = pd.read_csv(filename_zip)
+    print "Reading census"
+    c = pd.read_csv(filename_census)
+    #Rename census columns
+    rename_c = c.rename(columns={'GEO.id2': 'zip', '$b': 'b'})
+    print 'Merging Census with zip'
+    census_zip = pd.merge(rename_c,z)
+    for row_index, row in census_zip.iterrows():
+        states_zip[row['state']].append(row)
     return states_zip
 
 def find_match_in_state(state, city, zip_state, alternate=False):
@@ -64,7 +70,8 @@ def find_match_in_state(state, city, zip_state, alternate=False):
     """
     all_cities = zip_state[state]
     distances = list()
-    for z,typ,prim_city,acc_city,un_city,_,_,_,_,_,_,_,_,_,pop,_  in all_cities:
+    for c_info  in all_cities:
+
         #First letters have to match
         #TODO Large cities span multiple zipcodes,
         #need to return all zipcodes
@@ -85,12 +92,14 @@ def find_match_in_state(state, city, zip_state, alternate=False):
     return nearest_match
 
 def main():
-    zip_state = read_zips_into_states("zip_code_database_standard.csv")
+    zip_state = read_zips_into_states("zip_code_database.csv",
+                                      "ACS_11_5YR_DP03_with_ann.csv")
+    print zip_state['AK']
     lending_corpus= pd.read_csv("../LoanStatsNew.csv")
-    column_names = lending_corpus.columns
+
     for i,cc in enumerate(column_names):
         print i,cc
-    for c in lending_corpus.values[0:1000]:
+    for c in lending_corpus.values[0:100]:
         state = c[27]
         city = c[26]
         nearest_city_match = find_match_in_state(state, city, zip_state)
