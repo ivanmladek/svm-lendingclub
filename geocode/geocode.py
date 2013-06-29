@@ -70,40 +70,37 @@ def find_match_in_state(state, city, zip_state, alternate=False):
     """
     all_cities = zip_state[state]
     distances = list()
-    for c_info  in all_cities:
-
+    for c_info in all_cities:
+        prim_city = c_info['primary_city']
         #First letters have to match
-        #TODO Large cities span multiple zipcodes,
-        #need to return all zipcodes
         if city[:1].lower() == prim_city[:1].lower():
             d = float(dameraulevenshtein(
                     city.lower(),
                     prim_city.lower()))
-            distances.append([z,pop,prim_city, d])
+            distances.append([c_info, d])
+            #TODO Large cities span multiple zipcodes,
+            #need to return all zipcodes
             if d == 0.0:
                 break
         #loop through acceptable cities if alternate is True
-        if isinstance(acc_city, str) and alternate == True:
-            for acc in acc_city.split(","):
-                distances.append([z,pop,acc, float(dameraulevenshtein(
-                                city.lower(),
-                                acc.lower()))])
-    nearest_match = min(distances, key = lambda x: x[3])
+        #if isinstance(acc_city, str) and alternate == True:
+        #    for acc in acc_city.split(","):
+        #        distances.append([z,pop,acc, float(dameraulevenshtein(
+        #                        city.lower(),
+        #                        acc.lower()))])
+    nearest_match = min(distances, key = lambda x: x[1])
     return nearest_match
 
 def main():
     zip_state = read_zips_into_states("zip_code_database.csv",
                                       "ACS_11_5YR_DP03_with_ann.csv")
-    print zip_state['AK']
-    lending_corpus= pd.read_csv("../LoanStatsNew.csv")
+    in_file = "../LoanStatsNew.csv"
+    lending_corpus= pd.read_csv(in_file)
 
-    for i,cc in enumerate(column_names):
-        print i,cc
-    for c in lending_corpus.values[0:100]:
-        state = c[27]
-        city = c[26]
-        nearest_city_match = find_match_in_state(state, city, zip_state)
-        print state, city, nearest_city_match
+    for _, row in lending_corpus.iterrows():
+        nearest_city_match = find_match_in_state(row['addr_state'],
+                                                 row['addr_city'], zip_state)
+        print row['addr_state'], row['addr_city'], nearest_city_match[0]
 
 if __name__ == '__main__':
     main()
