@@ -127,10 +127,19 @@ class Geocode():
             new_row = row.append(nearest_city_match)
             new_df = pd.DataFrame(new_row).T
             geo_df = geo_df.append(new_df)
+        #Convert data frame to float and dicard non-float values
+        remove_columns = list()
+        for c in geo_df.columns:
+            print c
+            try:
+                geo_df[c].astype(float)
+            except:
+                remove_columns.append(c)
+        float_data = geo_df.drop(remove_columns, axis=1).astype('float')
         #Write to a file
-        geo_df.to_csv(in_file+'geo',sep=',',
+        float_data.to_csv(in_file+'geo',sep=',',
                       encoding='utf-8')
-        return geo_df
+        return float_data
 
 if __name__ == '__main__':
     g = Geocode()
