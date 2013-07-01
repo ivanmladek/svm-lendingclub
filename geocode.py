@@ -98,7 +98,6 @@ class Geocode():
                     if d == 0.0:
                         break
             nearest_match = min(distances, key = lambda x: x[1])[0]
-            print nearest_match
         return nearest_match
 
     def process_file(self,in_file):
@@ -121,7 +120,6 @@ class Geocode():
             nearest_city_match = self.find_match_in_state(
                 row['addr_state'],
                 row['addr_city'], zip_state)
-            print row['addr_city'],nearest_city_match['primary_city']
             #Merge the credit info with the census data
             new_row = row.append(nearest_city_match)
             new_df = pd.DataFrame(new_row).T
