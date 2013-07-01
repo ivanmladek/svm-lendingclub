@@ -132,20 +132,24 @@ CHECK_DICTIONARY = {
     'delinq_2yrs':[0.,10.],
     }
 
+def convert_columns_float(train):
+    float_train = list()
+    for c in train.columns:
+        try:
+            train[c].astype('float')
+            float_train.append(c)
+        except:
+            print 'train can not convert: '+c
+    return float_train
+
 def columns_both_training_predict(train, test):
     """
     Get a list of numerical columns common to both training
     and test dataset.
     """
     #TODO remove member_id
-    float_train =[c for c,d in zip(train.columns,
-                                   train.dtypes)
-                  if (d == 'float64' or
-                      d == 'int64')]
-    float_test =[c for c,d in zip(test.columns,
-                                  test.dtypes)
-                 if  (d == 'float64' or
-                      d == 'int64')]
+    float_train = convert_columns_float(train)
+    float_test = convert_columns_float(test)
     return set.intersection(
         set(float_train),
         set(float_test))
@@ -188,113 +192,6 @@ def train_test(X_scaled, status):
     print 'done training'
     return classifier
 
-def predict_current(current_offer, features_to_train,
-                    common_float_columns,
-                    scaler_init, classifier,
-                    year_train, update_current):
-     #Predict current loan offer sheet
-    #See
-
-    offer_scaled, offer_status, _ = prepare_data_for_year(
-        current_offer, [2013], common_float_columns,
-        def_scaler= scaler_init)
-    #current_loan
-    predict_offer = classifier.predict(offer_scaled[:, features_to_train])
-    predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
-    #Report
-    print  year_train, "2013"
-    print predict_offer
-    current_info_prob=list()
-    for i in range(len(predict_offer)):
-        raw_str = ''
-        for k in CHECK_DICTIONARY.keys():
-            raw_str = raw_str+','+k+':'+str(current_offer[k][i])
-        #Check loan is still open
-        if update_current:
-            funded_pcnt = check_funding(current_offer['url'][i])
-        else:
-            funded_pcnt = 0.
-        if funded_pcnt < 100.:
-            current_info_prob.append([predict_prob[i][1],
-                                      predict_offer[i],
-                                      current_offer['id'][i],
-                                      current_offer['url'][i],
-                                      current_offer['loan_amnt'][i],
-                                      current_offer['funded_amnt'][i],
-                                      current_offer['term'][i],
-                                      current_offer['apr'][i],
-                                      current_offer['purpose'][i],
-                                      #current_offer['review_status'][i],
-                                      ])
-    #Sort list according to probabilities
-    curr_sorted = sorted(current_info_prob, key=itemgetter(0))
-
-    #Print to a file
-    best_count = 50
-    f = open('predicted-best.csv','w')
-    for c in curr_sorted[0:best_count]:
-        f.write("%s\n" % ",".join(map(str,c)))
-    f.close()
-    f1 = open('predicted-worst.csv','w')
-    for c in curr_sorted[-1*best_count:]:
-        f1.write("%s\n" % ",".join(map(str,c)))
-    f1.close()
-
-
-    #Plot PDF
-    pdf=ppdf.PDF()
-    pdf.set_title('Lending Club Loan Applicant Ranking')
-    pdf.set_author('SVM Risk Consulting')
-    pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
-                      'predicted-best.csv')
-    pdf.print_chapter(len(curr_sorted) - best_count,
-                      'RATING OF BORROWERS - WORST '+str(best_count),
-                      'predicted-worst.csv')
-    filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
-    pdf.output(filename,'F')
-
-def prepare_data_for_year(training, target_y, float_columns,
-                          def_scaler=None):
-    #Weed out NaNs
-    finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
-    finite = training.take(finite_ix)
-
-    #Prepare training and test data
-    try:
-        year_index = [i for i,d in enumerate(finite.list_d)
-                      if (parse_year(d) in target_y)]
-        status = np.array([binary_status(l) for l in finite.loan_status[year_index]])
-    except:
-        status = [np.nan]
-
-    #Check validity of finite values
-    check_validity(finite)
-    #plot_histograms(finite, CHECK_DICTIONARY)
-
-
-    #TODO Test with home ownership status,
-    #emp_length,addr_state,mths_since_recent_inq
-    #TODO Basically take all numeric values and run random forest
-    #feature ranking on them
-    #It is much easier to predict defaults with some payment data i.e.
-    #not at loan origination but throughout the lifetime of the loan
-    print finite
-    print float_columns
-    for i,f in enumerate(float_columns):
-        print i,f
-    training_data = np.nan_to_num(np.array(
-            [finite[f] for f in float_columns])).transpose()[year_index,:]
-    print training_data.shape
-    print status
-
-    print training_data[0]
-    #Scale data
-    if def_scaler == None:
-        scaler = preprocessing.StandardScaler().fit(training_data)
-    else:
-        scaler = def_scaler
-    X_scaled = scaler.transform(training_data)
-    return X_scaled, status, scaler
 
 def trailing_delimiter_parser(filename):
     current_offer = pd.read_csv(filename,
@@ -310,6 +207,148 @@ parser_options = {"InFun": trailing_delimiter_parser,
                   "LoanS": standard_parser,}
 
 
+
+class SVMLending():
+    """
+    Training and preciting class for SVM credit scoring of Lending Club loans.
+    """
+
+
+    def __init__(training, current_offer, year_train, year_predict):
+        print year_train, year_predict
+        common_float_columns = columns_both_training_predict(
+        training, current_offer)
+        X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
+        X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
+
+    def prepare_data_for_year(self, training, target_y, float_columns,
+                              def_scaler=None):
+        #Weed out NaNs
+        finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
+        finite = training.take(finite_ix)
+
+        #Prepare training and test data
+        try:
+            year_index = [i for i,d in enumerate(finite.list_d)
+                          if (parse_year(d) in target_y)]
+            status = np.array([binary_status(l) for l in finite.loan_status[year_index]])
+        except:
+            status = [np.nan]
+
+        #Check validity of finite values
+        check_validity(finite)
+        #plot_histograms(finite, CHECK_DICTIONARY)
+        #It is much easier to predict defaults with some payment data i.e.
+        #not at loan origination but throughout the lifetime of the loan
+        print finite
+        print float_columns
+        for i,f in enumerate(float_columns):
+            print i,f
+            training_data = np.nan_to_num(np.array(
+                    [finite[f] for f in
+                     float_columns])).transpose()[year_index,:]
+            print training_data.shape
+            print status
+            print training_data[0]
+        #Scale data
+            if def_scaler == None:
+                scaler = preprocessing.StandardScaler().fit(training_data)
+            else:
+                scaler = def_scaler
+        X_scaled = scaler.transform(training_data)
+        return X_scaled, status, scaler
+
+    def train(self, X_scaled, status):
+        print "Random Forest optimization"
+        features_to_train = forest_optim(X_scaled, status)
+        print features_to_train
+        #Perform RFE
+        print "RFE optimization"
+        #n_feat_optimal = rfe_optim(X_scaled, status)
+        #print 'optimal features'
+        #print features_to_train[0:n_feat_optimal]
+
+        #Train
+        classifier = train_test(X_scaled[:,features_to_train], status)
+        print classifier.best_estimator_
+        print 'ROC computation'
+        roc(X_scaled[:,features_to_train], status,
+            classifier.best_estimator_)
+        return classifier, features_to_train
+
+    def predict(self, classifier, X_scaled_test,
+                features_to_train, status_test):
+        #Predict
+        predict_test = classifier.predict(X_scaled_test[:,features_to_train])
+
+        #Report
+        print metrics.classification_report(status_test, predict_test)
+        print metrics.confusion_matrix(status_test, predict_test)
+        return 0
+
+    def predict_current(self, current_offer, features_to_train,
+                        common_float_columns,
+                        scaler_init, classifier,
+                        year_train, update_current):
+        offer_scaled, offer_status, _ = prepare_data_for_year(
+            current_offer, [2013], common_float_columns,
+            def_scaler= scaler_init)
+        #current_loan
+        predict_offer = classifier.predict(offer_scaled[:, features_to_train])
+        predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
+        #Report
+        print  year_train, "2013"
+        print predict_offer
+        current_info_prob=list()
+        for i in range(len(predict_offer)):
+            raw_str = ''
+            for k in CHECK_DICTIONARY.keys():
+                raw_str = raw_str+','+k+':'+str(current_offer[k][i])
+            #Check loan is still open
+            if update_current:
+                funded_pcnt = check_funding(current_offer['url'][i])
+            else:
+                funded_pcnt = 0.
+            if funded_pcnt < 100.:
+                current_info_prob.append([predict_prob[i][1],
+                                          predict_offer[i],
+                                          current_offer['id'][i],
+                                          current_offer['url'][i],
+                                          current_offer['loan_amnt'][i],
+                                          current_offer['funded_amnt'][i],
+                                          current_offer['term'][i],
+                                          current_offer['apr'][i],
+                                          current_offer['purpose'][i],
+                                          #current_offer['review_status'][i],
+                                          ])
+        #Sort list according to probabilities
+        curr_sorted = sorted(current_info_prob, key=itemgetter(0))
+
+        #Print to a file
+        best_count = 50
+        f = open('predicted-best.csv','w')
+        for c in curr_sorted[0:best_count]:
+            f.write("%s\n" % ",".join(map(str,c)))
+        f.close()
+        f1 = open('predicted-worst.csv','w')
+        for c in curr_sorted[-1*best_count:]:
+            f1.write("%s\n" % ",".join(map(str,c)))
+        f1.close()
+
+        #Plot PDF
+        pdf=ppdf.PDF()
+        pdf.set_title('Lending Club Loan Applicant Ranking')
+        pdf.set_author('SVM Risk Consulting')
+        pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
+                          'predicted-best.csv')
+        pdf.print_chapter(len(curr_sorted) - best_count,
+                          'RATING OF BORROWERS - WORST '+str(best_count),
+                          'predicted-worst.csv')
+        filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
+        pdf.output(filename,'F')
+        return 0
+
+
 def main(update_current=False):
     from optparse import OptionParser
     parser = OptionParser()
@@ -319,59 +358,26 @@ def main(update_current=False):
                       default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew.csv")
-    #parser.add_option("-i", "--test_file",
-    #                  default="InFunding2StatsNew.csv")
+    parser.add_option("-i", "--test_file",
+                      default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
 
     g = geocode.Geocode()
     #Read and geocode training data
-    #training = parser_options[opts.train_file](opts.train_file)
     training = g.process_file(opts.train_file)
-    print training
-    #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
-    #for trailing delimiters
-    #current_offer = parser_options[opts.test_file](opts.test_file)
     current_offer = g.process_file(StringIO(download_current()))
-    print current_offer
     #Interpret raining years
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
-    print year_train, year_predict
-    common_float_columns = columns_both_training_predict(
-        training, current_offer)
 
-    X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
-    X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
-
-
-    print "Random Forest optimization"
-    features_to_train = forest_optim(X_scaled, status)
-    print features_to_train
-
-
-    #Perform RFE
-    print "RFE optimization"
-    #n_feat_optimal = rfe_optim(X_scaled, status)
-    #print 'optimal features'
-    #print features_to_train[0:n_feat_optimal]
-
+    LC = SVMLending(training, current_offer, year_train,
+                    year_predict)
     #Train
-    classifier = train_test(X_scaled[:,features_to_train], status)
-    print classifier.best_estimator_
-    print 'ROC computation'
-    roc(X_scaled[:,features_to_train], status,
-        classifier.best_estimator_)
 
-   #Predict
-    predict_test = classifier.predict(X_scaled_test[:,features_to_train])
+    #Predict
 
-    #Report
-    print year_train, year_predict
-    print metrics.classification_report(status_test, predict_test)
-    print metrics.confusion_matrix(status_test, predict_test)
-    predict_current(current_offer,features_to_train, common_float_columns,
-                    scaler_init, classifier, year_train,
-                    update_current)
+
+
 
     return 0
 

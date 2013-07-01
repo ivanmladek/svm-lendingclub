@@ -109,13 +109,16 @@ class Geocode():
         print type(in_file)
         zip_state = self.read_zips_into_states("zip_code_database.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
+        #TODO Don't geocode already geocoded files
+
+        #Read file using the right parser
         if type(in_file) == str:
             lending_corpus = self.parser_options['LoanS'](in_file)
         else:
             lending_corpus = self.parser_options['InFun'](in_file)
             in_file = 'current_offers_' + \
                 datetime.now().date().strftime('%Y-%m-%d-%h')
-        #Read file using the right parser
+
         geo_df = pd.DataFrame()
         lc = len(lending_corpus)
         for i,(_, row) in enumerate(lending_corpus.iterrows()):
@@ -127,19 +130,11 @@ class Geocode():
             new_row = row.append(nearest_city_match)
             new_df = pd.DataFrame(new_row).T
             geo_df = geo_df.append(new_df)
-        #Convert data frame to float and dicard non-float values
-        remove_columns = list()
-        for c in geo_df.columns:
-            print c
-            try:
-                geo_df[c].astype(float)
-            except:
-                remove_columns.append(c)
-        float_data = geo_df.drop(remove_columns, axis=1).astype('float')
         #Write to a file
-        float_data.to_csv(in_file+'geo',sep=',',
-                      encoding='utf-8')
-        return float_data
+        geo_df.to_csv(in_file+'geo',sep=',',
+                          encoding='utf-8')
+        print geo_df
+        return geo_df
 
 if __name__ == '__main__':
     g = Geocode()
