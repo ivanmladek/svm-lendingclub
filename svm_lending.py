@@ -9,7 +9,6 @@ from StringIO import StringIO
 from operator import itemgetter
 import re
 import pandas as pd
-from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 from datetime import datetime

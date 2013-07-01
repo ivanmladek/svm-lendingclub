@@ -3,6 +3,7 @@ import math
 import numpy as np
 from collections import defaultdict
 from svm_lending import parser_options
+from datetime import datetime
 
 def dameraulevenshtein(seq1, seq2):
     """
@@ -112,6 +113,8 @@ class Geocode():
             lending_corpus = self.parser_options['LoanS'](in_file)
         else:
             lending_corpus = self.parser_options['InFun'](in_file)
+            in_file = 'current_offers_' + \
+                datetime.now().date().strftime('%Y-%m-%d-%h')
         #Read file using the right parser
         geo_df = pd.DataFrame()
         lc = len(lending_corpus)
