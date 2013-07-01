@@ -213,16 +213,17 @@ class SVMLending():
     Training and preciting class for SVM credit scoring of Lending Club loans.
     """
 
-
-    def __init__(training, current_offer, year_train, year_predict):
+    def __init__(self,training, current_offer, year_train, year_predict):
         print year_train, year_predict
         common_float_columns = columns_both_training_predict(
         training, current_offer)
-        X_scaled, status, scaler_init = prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
-        X_scaled_test, status_test, _ = prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
+        print common_float_columns
+        X_scaled, status, scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
+        X_scaled_test, status_test, _ = self.prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
 
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
+        #TODO Only use float columns, astype
         #Weed out NaNs
         finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
         finite = training.take(finite_ix)
@@ -361,18 +362,18 @@ def main(update_current=False):
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
-
-    g = geocode.Geocode()
-    #Read and geocode training data
-    training = g.process_file(opts.train_file)
-    current_offer = g.process_file(StringIO(download_current()))
     #Interpret raining years
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
 
+    #Read and geocode training data
+    g = geocode.Geocode()
+    training = g.process_file(opts.train_file)
+    current_offer = g.process_file(StringIO(download_current()))
+
+    #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
-    #Train
 
     #Predict
 
