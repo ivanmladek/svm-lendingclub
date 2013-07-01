@@ -51,7 +51,10 @@ def dameraulevenshtein(seq1, seq2):
     return thisrow[len(seq2) - 1]
 
 class Geocode():
-
+    """
+    Geocode input DataFrame and output geocoded
+    DataFarme.
+    """
     def __init__(self):
         self.parser_options = parser_options
 
@@ -106,21 +109,17 @@ class Geocode():
                                                "ACS_11_5YR_DP03_with_ann.csv")
         lending_corpus = self.parser_options[in_file](in_file)
         #Read file using the right parser
-        geocoded = list()
+        geo_df = pd.DataFrame()
         for _, row in lending_corpus.iterrows():
             nearest_city_match = self.find_match_in_state(
                 row['addr_state'],
                 row['addr_city'], zip_state)
             #Merge the credit info with the census data
             new_row = row.append(nearest_city_match[0])
-            print new_row
-            geocoded = geocoded.append(new_row)
-        #http://stackoverflow.com/questions/13653030/how-do-i-pass-a-list-of-series-to-a-pandas-dataframe
-        df_geocoded = PD.concat(geocoded, keys = [s.name for s in new_row])
-        print geocoded
-        return geocoded
+            new_df = pd.DataFrame(new_row).T
+            geo_df = geo_df.append(new_df)
+        return geo_df
 
 if __name__ == '__main__':
     g = Geocode()
     geocoded = g.process_file("InFunding2StatsNew.csv")
-    main()
