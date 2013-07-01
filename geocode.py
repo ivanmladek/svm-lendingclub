@@ -63,7 +63,7 @@ class Geocode():
         """
         By state
         """
-        states_zip = defaultdict(list)
+        states_zip = defaultdict(lambda : defaultdict(list))
         print "Reading zips"
         z = pd.read_csv(filename_zip)
         print "Reading census"
@@ -73,7 +73,7 @@ class Geocode():
         print 'Merging Census with zip'
         census_zip = pd.merge(rename_c,z)
         for row_index, row in census_zip.iterrows():
-            states_zip[row['state']].append(row)
+            states_zip[row['state']][row['primary_city'].lower()].append(row)
         return states_zip
 
     def find_match_in_state(self, state,
@@ -81,27 +81,24 @@ class Geocode():
         """
         Find the city in the state that best matches
         """
-        all_cities = zip_state[state]
-        distances = list()
-        for c_info in all_cities:
-            prim_city = c_info['primary_city']
-        #First letters have to match
-            if city[:1].lower() == prim_city[:1].lower():
-                d = float(dameraulevenshtein(
-                        city.lower(),
-                        prim_city.lower()))
-                distances.append([c_info, d])
-                #TODO Large cities span multiple zipcodes,
-                #need to return all zipcodes
-                if d == 0.0:
-                    break
-            ##loop through acceptable cities if alternate is True
-            #if isinstance(acc_city, str) and alternate == True:
-            #    for acc in acc_city.split(","):
-            #        distances.append([z,pop,acc, float(dameraulevenshtein(
-            #                        city.lower(),
-            #                        acc.lower()))])
-        nearest_match = min(distances, key = lambda x: x[1])
+        all_cities = zip_state[state][city.lower()]
+        if len(all_cities) > 0:
+            #TODO Large cities span multiple zipcodes,
+            #need to return all zipcodes
+            nearest_match = all_cities[0]
+        else:
+            distances = list()
+            for k, v in zip_state[state].iteritems():
+                for c_info in v:
+                    prim_city = c_info['primary_city']
+                    d = float(dameraulevenshtein(
+                            city.lower(),
+                            prim_city.lower()))
+                    distances.append([c_info, d])
+                    if d == 0.0:
+                        break
+            nearest_match = min(distances, key = lambda x: x[1])[0]
+            print nearest_match
         return nearest_match
 
     def process_file(self,in_file):
@@ -109,13 +106,13 @@ class Geocode():
         Geocode file and return a new Pandas DataFrame which
         is geocoded.
         """
-        print in_file
+        print type(in_file)
         zip_state = self.read_zips_into_states("zip_code_database.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
-        try:
-            lending_corpus = self.parser_options[in_file](in_file)
-        except:
-            lending_corpus = pd.read_csv(in_file)
+        if type(in_file) == str:
+            lending_corpus = self.parser_options['LoanS'](in_file)
+        else:
+            lending_corpus = self.parser_options['InFun'](in_file)
         #Read file using the right parser
         geo_df = pd.DataFrame()
         lc = len(lending_corpus)
@@ -124,8 +121,9 @@ class Geocode():
             nearest_city_match = self.find_match_in_state(
                 row['addr_state'],
                 row['addr_city'], zip_state)
+            print row['addr_city'],nearest_city_match['primary_city']
             #Merge the credit info with the census data
-            new_row = row.append(nearest_city_match[0])
+            new_row = row.append(nearest_city_match)
             new_df = pd.DataFrame(new_row).T
             geo_df = geo_df.append(new_df)
         #Write to a file

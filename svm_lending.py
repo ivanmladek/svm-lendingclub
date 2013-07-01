@@ -5,6 +5,7 @@ from sklearn import (svm, preprocessing,
 
 from sklearn.metrics import (zero_one_loss,
                              recall_score)
+from StringIO import StringIO
 from operator import itemgetter
 import re
 import pandas as pd
@@ -24,6 +25,12 @@ import geocode
 #Calculate KS score for 2007,2008,2009 loans
 # TODO for each run output details into a txt with
 #columns used, model details and confusion matrix
+
+def download_current():
+    url = "https://www.lendingclub.com/fileDownload.action?file=InFunding2StatsNew.csv&type=gen"
+    print 'Downloading current offers from: '+url
+    text = urllib2.urlopen(url).read()
+    return text
 
 def check_funding(url):
     """
@@ -300,8 +307,8 @@ def trailing_delimiter_parser(filename):
 def standard_parser(filename):
     return pd.read_csv(filename)
 
-parser_options = {"InFunding2StatsNew.csv": trailing_delimiter_parser,
-                  "LoanStatsNew.csv": standard_parser,}
+parser_options = {"InFun": trailing_delimiter_parser,
+                  "LoanS": standard_parser,}
 
 
 def main(update_current=False):
@@ -313,18 +320,20 @@ def main(update_current=False):
                       default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew.csv")
-    parser.add_option("-i", "--test_file",
-                      default="InFunding2StatsNew.csv")
+    #parser.add_option("-i", "--test_file",
+    #                  default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
 
     g = geocode.Geocode()
     #Read and geocode training data
     #training = parser_options[opts.train_file](opts.train_file)
     training = g.process_file(opts.train_file)
+    print training
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
     #for trailing delimiters
     #current_offer = parser_options[opts.test_file](opts.test_file)
-    current_offer = g.process_file(opts.test_file)
+    current_offer = g.process_file(StringIO(download_current()))
+    print current_offer
     #Interpret raining years
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
