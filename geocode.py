@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 import numpy as np
 from collections import defaultdict
 from svm_lending import parser_options
@@ -59,6 +60,9 @@ class Geocode():
         self.parser_options = parser_options
 
     def read_zips_into_states(self, filename_zip, filename_census):
+        """
+        By state
+        """
         states_zip = defaultdict(list)
         print "Reading zips"
         z = pd.read_csv(filename_zip)
@@ -105,12 +109,18 @@ class Geocode():
         Geocode file and return a new Pandas DataFrame which
         is geocoded.
         """
+        print in_file
         zip_state = self.read_zips_into_states("zip_code_database.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
-        lending_corpus = self.parser_options[in_file](in_file)
+        try:
+            lending_corpus = self.parser_options[in_file](in_file)
+        except:
+            lending_corpus = pd.read_csv(in_file)
         #Read file using the right parser
         geo_df = pd.DataFrame()
-        for _, row in lending_corpus.iterrows():
+        lc = len(lending_corpus)
+        for i,(_, row) in enumerate(lending_corpus.iterrows()):
+            if (i/100. == (math.floor(i/100.))): print i, lc, float(float(i)/float(lc))
             nearest_city_match = self.find_match_in_state(
                 row['addr_state'],
                 row['addr_city'], zip_state)
@@ -118,6 +128,9 @@ class Geocode():
             new_row = row.append(nearest_city_match[0])
             new_df = pd.DataFrame(new_row).T
             geo_df = geo_df.append(new_df)
+        #Write to a file
+        geo_df.to_csv(in_file+'geo',sep=',',
+                      encoding='utf-8')
         return geo_df
 
 if __name__ == '__main__':

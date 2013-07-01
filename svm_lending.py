@@ -18,7 +18,7 @@ import numpy as np
 import pdf as ppdf
 from evaluators import (rfe_optim, forest_optim, roc,
                         parameters)
-
+import geocode
 
 #TODO AUC score function
 #Calculate KS score for 2007,2008,2009 loans
@@ -301,27 +301,31 @@ def standard_parser(filename):
     return pd.read_csv(filename)
 
 parser_options = {"InFunding2StatsNew.csv": trailing_delimiter_parser,
-                  "LoanStatsNew.csv": standard_parser,
-                  }
+                  "LoanStatsNew.csv": standard_parser,}
 
 
 def main(update_current=False):
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-t", "--train",
-                      default=2008,)
+                      default='[2008]',)
     parser.add_option("-p", "--process",
-                      default=2009)
+                      default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew.csv")
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
 
-    training = parser_options[opts.train_file](opts.train_file)
+    g = geocode.Geocode()
+    #Read and geocode training data
+    #training = parser_options[opts.train_file](opts.train_file)
+    training = g.process_file(opts.train_file)
     #http://pandas.pydata.org/pandas-docs/stable/io.html#index-columns-and-trailing-delimiters
     #for trailing delimiters
-    current_offer = parser_options[opts.test_file](opts.test_file)
+    #current_offer = parser_options[opts.test_file](opts.test_file)
+    current_offer = g.process_file(opts.test_file)
+    #Interpret raining years
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
     print year_train, year_predict
