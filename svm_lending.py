@@ -57,12 +57,12 @@ def plot_histograms(finite, check_dictionary):
 def binary_status(st):
     if (st == 'Issued' or
         st == 'Fully Paid' or
-        st == 'Current' or
-        st == 'Late (16-30 days)' or
-        st == 'Does not meet the current credit policy.  Status:In Grace Period'
+        st == 'Current' #or
+        #st == 'Late (16-30 days)' or
+        #st == 'Does not meet the current credit policy.  Status:In Grace Period'
         ):
         return 0
-    if st == np.nan:
+    if st == np.NaN:
         raise Exception("No NaNs allowed in status")
     else:
         return 1
@@ -234,8 +234,11 @@ class SVMLending():
         year_index = [i for i,d in enumerate(training.list_d)
                       if (parse_year(d) in target_y)]
         try:
-            print np.array([l for l in training.loan_status[year_index]])
-            status = np.array([binary_status(l) for l in training.loan_status[year_index]])
+            #print np.array([l for l in training.loan_status])
+            raw_status = training.loan_status
+            status = np.array([binary_status(r) for i,r in enumerate(raw_status) if i in year_index])
+            print status
+            #status = np.array([binary_status(l) for l in training.loan_status[year_index]])
         except:
             print 'No status data'
             status = [np.nan]
