@@ -62,6 +62,8 @@ def binary_status(st):
         st == 'Does not meet the current credit policy.  Status:In Grace Period'
         ):
         return 0
+    if st == np.nan:
+        raise Exception("No NaNs allowed in status")
     else:
         return 1
 
@@ -213,49 +215,50 @@ class SVMLending():
     Training and preciting class for SVM credit scoring of Lending Club loans.
     """
 
-    def __init__(self,training, current_offer, year_train, year_predict):
+    def __init__(self, training, current_offer, year_train, year_predict):
         print year_train, year_predict
         common_float_columns = columns_both_training_predict(
         training, current_offer)
         print common_float_columns
+        print training, current_offer
         X_scaled, status, scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
         X_scaled_test, status_test, _ = self.prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
 
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
-        #TODO Only use float columns, astype
         #Weed out NaNs
-        finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
-        finite = training.take(finite_ix)
+        #finite_ix = np.flatnonzero(np.isfinite([f for f in training.fico_range_high]))
+        #finite = training.take(finite_ix)
 
         #Prepare training and test data
+        year_index = [i for i,d in enumerate(training.list_d)
+                      if (parse_year(d) in target_y)]
         try:
-            year_index = [i for i,d in enumerate(finite.list_d)
-                          if (parse_year(d) in target_y)]
-            status = np.array([binary_status(l) for l in finite.loan_status[year_index]])
+            print np.array([l for l in training.loan_status[year_index]])
+            status = np.array([binary_status(l) for l in training.loan_status[year_index]])
         except:
+            print 'No status data'
             status = [np.nan]
 
+        #Convert float_columns to float
+        finite_float = training[list(float_columns)].astype('float')
+
         #Check validity of finite values
-        check_validity(finite)
+        check_validity(finite_float)
         #plot_histograms(finite, CHECK_DICTIONARY)
-        #It is much easier to predict defaults with some payment data i.e.
-        #not at loan origination but throughout the lifetime of the loan
-        print finite
-        print float_columns
+        print finite_float
         for i,f in enumerate(float_columns):
-            print i,f
             training_data = np.nan_to_num(np.array(
-                    [finite[f] for f in
+                    [finite_float[f] for f in
                      float_columns])).transpose()[year_index,:]
-            print training_data.shape
-            print status
-            print training_data[0]
+        print training_data.shape
+        print status
+        print training_data[0]
         #Scale data
-            if def_scaler == None:
-                scaler = preprocessing.StandardScaler().fit(training_data)
-            else:
-                scaler = def_scaler
+        if def_scaler == None:
+            scaler = preprocessing.StandardScaler().fit(training_data)
+        else:
+            scaler = def_scaler
         X_scaled = scaler.transform(training_data)
         return X_scaled, status, scaler
 
@@ -291,7 +294,7 @@ class SVMLending():
                         common_float_columns,
                         scaler_init, classifier,
                         year_train, update_current):
-        offer_scaled, offer_status, _ = prepare_data_for_year(
+        offer_scaled, offer_status, _ = self.prepare_data_for_year(
             current_offer, [2013], common_float_columns,
             def_scaler= scaler_init)
         #current_loan
