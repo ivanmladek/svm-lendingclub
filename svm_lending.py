@@ -221,8 +221,10 @@ class SVMLending():
         training, current_offer)
         print common_float_columns
         print training, current_offer
-        X_scaled, status, scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
-        X_scaled_test, status_test, _ = self.prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=scaler_init)
+        #Base training data
+        self.X_scaled, self.status, self.scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
+        #Out of sample test data
+        self.X_scaled_test, self.status_test, _ = self.prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=self.scaler_init)
 
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
@@ -380,7 +382,7 @@ def main(update_current=False):
     #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
-
+    classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
     #Predict
 
 
