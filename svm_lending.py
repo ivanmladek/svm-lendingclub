@@ -244,7 +244,8 @@ class SVMLending():
         try:
             #print np.array([l for l in training.loan_status])
             raw_status = training.loan_status
-            status = np.array([binary_status(r) for i,r in enumerate(raw_status) if i in year_index])
+            status = np.array([binary_status(r) for i,r in enumerate(raw_status)
+                               if i in year_index])
             print status
             #status = np.array([binary_status(l) for l in training.loan_status[year_index]])
         except:
@@ -315,10 +316,10 @@ class SVMLending():
         predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
 
 
-        #TODO separate
-        #Report fn
+        #TODO separate Report fn
         print predict_offer
         print predict_prob
+
         current_info_prob=list()
         for i in range(len(predict_offer)):
             #Check loan is still open
@@ -327,18 +328,17 @@ class SVMLending():
             else:
                 funded_pcnt = 0.
             if funded_pcnt < 100.:
-                print current_offer['id'][:]
                 current_info_prob.append([predict_prob[i][1],
                                           predict_offer[i],
-                                          current_offer['id'][i],
-                                          current_offer['url'][i],
-                                          current_offer['loan_amnt'][i],
-                                          current_offer['funded_amnt'][i],
-                                          current_offer['term'][i],
-                                          current_offer['apr'][i],
-                                          current_offer['purpose'][i],
-                                          current_offer['latitude'][i],
-                                          current_offer['longitude'][i],
+                                          np.asarray(current_offer['id'])[i],
+                                          np.asarray(current_offer['url'])[i],
+                                          np.asarray(current_offer['loan_amnt'])[i],
+                                          np.asarray(current_offer['funded_amnt'])[i],
+                                          np.asarray(current_offer['term'])[i],
+                                          np.asarray(current_offer['apr'])[i],
+                                          np.asarray(current_offer['purpose'])[i],
+                                          np.asarray(current_offer['latitude'])[i],
+                                          np.asarray(current_offer['longitude'])[i],
                                           #current_offer['review_status'][i],
                                           ])
         #Sort list according to probabilities
