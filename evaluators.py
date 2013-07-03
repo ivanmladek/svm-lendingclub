@@ -128,7 +128,7 @@ def roc(X, y,classifier,  n_f=10):
     pl.show()
 
 
-def forest_optim(X_scaled, status, FEAT_TOL=0.01):
+def forest_optim(X_scaled, status, FEAT_TOL=0.005):
     """
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
     plot_forest_importances.html#example-ensemble-plot-forest-importances-py

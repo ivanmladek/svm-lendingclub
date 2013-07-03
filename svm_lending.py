@@ -303,8 +303,12 @@ class SVMLending():
         #current_loan
         predict_offer = classifier.predict(offer_scaled[:, features_to_train])
         predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
-        #Report
+
+
+        #TODO separate
+        #Report fn
         print predict_offer
+        print predict_prob
         current_info_prob=list()
         for i in range(len(predict_offer)):
             raw_str = ''
@@ -341,7 +345,8 @@ class SVMLending():
             f1.write("%s\n" % ",".join(map(str,c)))
         f1.close()
 
-        #Plot PDF
+
+        #TODO separate Plot PDF
         pdf=ppdf.PDF()
         pdf.set_title('Lending Club Loan Applicant Ranking')
         pdf.set_author('SVM Risk Consulting')
