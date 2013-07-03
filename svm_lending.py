@@ -224,7 +224,10 @@ class SVMLending():
         #Base training data
         self.X_scaled, self.status, self.scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
         #Out of sample test data
-        self.X_scaled_test, self.status_test, _ = self.prepare_data_for_year(training, year_predict, common_float_columns,  def_scaler=self.scaler_init)
+        self.X_scaled_test, self.status_test, _ = self.prepare_data_for_year(training, year_predict,
+                                                                             common_float_columns,  def_scaler=self.scaler_init)
+        self.offer_scaled, self.offer_status,_ = self.prepare_data_for_year(current_offer, [2013],
+                                                                            common_float_columns, def_scaler=self.scaler_init)
 
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
@@ -295,18 +298,12 @@ class SVMLending():
         print metrics.confusion_matrix(status_test, predict_test)
         return 0
 
-    def predict_current(self, current_offer, features_to_train,
-                        common_float_columns,
-                        scaler_init, classifier,
-                        year_train, update_current):
-        offer_scaled, offer_status, _ = self.prepare_data_for_year(
-            current_offer, [2013], common_float_columns,
-            def_scaler= scaler_init)
+    def predict_current(self, offer_scaled, features_to_train,
+                        classifier, update_current=False):
         #current_loan
         predict_offer = classifier.predict(offer_scaled[:, features_to_train])
         predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
         #Report
-        print  year_train, "2013"
         print predict_offer
         current_info_prob=list()
         for i in range(len(predict_offer)):
@@ -383,8 +380,10 @@ def main(update_current=False):
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
     classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
-    #Predict
 
+    #Predict current_offering
+    LC.predict_current(LC.offer_scaled, features_to_train,
+                       classifier,update_current=False)
 
 
 
