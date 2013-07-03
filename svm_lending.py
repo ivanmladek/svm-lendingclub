@@ -217,17 +217,20 @@ class SVMLending():
 
     def __init__(self, training, current_offer, year_train, year_predict):
         print year_train, year_predict
-        common_float_columns = columns_both_training_predict(
+        self.common_float_columns = columns_both_training_predict(
         training, current_offer)
-        print common_float_columns
+        print self.common_float_columns
         print training, current_offer
         #Base training data
-        self.X_scaled, self.status, self.scaler_init = self.prepare_data_for_year(training, year_train, common_float_columns, def_scaler=None)
+        self.X_scaled, self.status, self.scaler_init = \
+            self.prepare_data_for_year(training, year_train,
+                                       self.common_float_columns,
+                                       def_scaler=None)
         #Out of sample test data
-        self.X_scaled_test, self.status_test, _ = self.prepare_data_for_year(training, year_predict,
-                                                                             common_float_columns,  def_scaler=self.scaler_init)
-        self.offer_scaled, self.offer_status,_ = self.prepare_data_for_year(current_offer, [2013],
-                                                                            common_float_columns, def_scaler=self.scaler_init)
+        self.X_scaled_test, self.status_test, _ = \
+            self.prepare_data_for_year(training, year_predict,
+                                       self.common_float_columns,
+                                       def_scaler=self.scaler_init)
 
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
@@ -275,7 +278,7 @@ class SVMLending():
         features_to_train = forest_optim(X_scaled, status)
         print features_to_train
         #Perform RFE
-        print "RFE optimization"
+        #print "RFE optimization"
         #n_feat_optimal = rfe_optim(X_scaled, status)
         #print 'optimal features'
         #print features_to_train[0:n_feat_optimal]
@@ -298,8 +301,15 @@ class SVMLending():
         print metrics.confusion_matrix(status_test, predict_test)
         return 0
 
-    def predict_current(self, offer_scaled, features_to_train,
+    def predict_current(self, current_offer, features_to_train,
+                        common_float_columns,
                         classifier, update_current=False):
+
+        offer_scaled, offer_status,_ = \
+            self.prepare_data_for_year(current_offer, [2013],
+                                       common_float_columns,
+                                       def_scaler=self.scaler_init)
+
         #current_loan
         predict_offer = classifier.predict(offer_scaled[:, features_to_train])
         predict_prob = classifier.predict_proba(offer_scaled[:, features_to_train])
@@ -311,15 +321,13 @@ class SVMLending():
         print predict_prob
         current_info_prob=list()
         for i in range(len(predict_offer)):
-            raw_str = ''
-            for k in CHECK_DICTIONARY.keys():
-                raw_str = raw_str+','+k+':'+str(current_offer[k][i])
             #Check loan is still open
             if update_current:
                 funded_pcnt = check_funding(current_offer['url'][i])
             else:
                 funded_pcnt = 0.
             if funded_pcnt < 100.:
+                print current_offer['id'][:]
                 current_info_prob.append([predict_prob[i][1],
                                           predict_offer[i],
                                           current_offer['id'][i],
@@ -329,13 +337,15 @@ class SVMLending():
                                           current_offer['term'][i],
                                           current_offer['apr'][i],
                                           current_offer['purpose'][i],
+                                          current_offer['latitude'][i],
+                                          current_offer['longitude'][i],
                                           #current_offer['review_status'][i],
                                           ])
         #Sort list according to probabilities
         curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
         #Print to a file
-        best_count = 50
+        best_count = 500
         f = open('predicted-best.csv','w')
         for c in curr_sorted[0:best_count]:
             f.write("%s\n" % ",".join(map(str,c)))
@@ -376,22 +386,24 @@ def main(update_current=False):
     year_train = eval(opts.train)
     year_predict = eval(opts.process)
 
+    ###############################
     #Read and geocode training data
     g = geocode.Geocode()
     training = g.process_file(opts.train_file)
+    #Download current offer
     current_offer = g.process_file(StringIO(download_current()))
 
+    ###############################
     #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
     classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
 
+    ################################
     #Predict current_offering
-    LC.predict_current(LC.offer_scaled, features_to_train,
-                       classifier,update_current=False)
-
-
-
+    LC.predict_current(current_offer, features_to_train,
+                       LC.common_float_columns,
+                       classifier, update_current=False)
     return 0
 
 if __name__ == '__main__':

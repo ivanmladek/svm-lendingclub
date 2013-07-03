@@ -87,7 +87,7 @@ class PDF(FPDF):
                 self.ln()
                 for i,t in enumerate(txt.split("\n")):
                     try:
-                        default, status, offid, url,amnt,funded_amnt, term,  apr, purpose= t.split(",")
+                        default, status, offid, url,amnt,funded_amnt, term,  apr, purpose, lat, lon = t.split(",")
                         d_f = float(default.replace("[",""))*100
                         if d_f < 30.:
                             self.set_fill_color(127,255,0)
