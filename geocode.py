@@ -64,24 +64,10 @@ class Geocode():
         #print city, state, nearest_match['primary_city']
         return nearest_match
 
-    def process_file(self,in_file):
-        """
-        Geocode file and return a new Pandas DataFrame which
-        is geocoded.
-        """
-        print type(in_file)
+    def geocode_df(self,lending_corpus):
         zip_state = self.read_zips_into_states("zip_code_database_standard2.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
         #TODO Don't geocode already geocoded files
-
-        #Read file using the right parser
-        if type(in_file) == str:
-            lending_corpus = self.parser_options['LoanS'](in_file)
-        else:
-            lending_corpus = self.parser_options['InFun'](in_file)
-            in_file = 'current_offers_' + \
-                datetime.now().date().strftime('%Y-%m-%d-%h')
-
         lc = len(lending_corpus)
         matched_lending_census = [
             row.append(self.find_match_in_state(row_ix, lc,
@@ -93,9 +79,32 @@ class Geocode():
         #new_row = [n[0].append(n[1]) for n in matched_lending_census]
         geo_df = pd.DataFrame(matched_lending_census)#.T
         #Write to a file
-        print 'printing new CSV'
+        print 'printing file'
         geo_df.to_csv(in_file+'geo',sep=',',
                           encoding='utf-8')
+        return geo_df
+
+    def process_file(self,in_file, geocode=True):
+        """
+        Geocode file and return a new Pandas DataFrame which
+        is geocoded.
+        """
+        print type(in_file)
+        #Read file using the right parser
+        if type(in_file) == str:
+            lending_corpus = self.parser_options['LoanS'](in_file)
+        else:
+            lending_corpus = self.parser_options['InFun'](in_file)
+            in_file = 'current_offers_' + \
+                datetime.now().date().strftime('%Y-%m-%d-%h')
+        if geocode:
+            print 'Geocoding for ',in_file
+            geo_df = self.geocode_df(lending_corpus)
+        else:
+            print 'Skipping geocoding for ', in_file
+            geo_df = lending_corpus
+
+
         print geo_df
         return geo_df
 

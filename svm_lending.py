@@ -389,7 +389,7 @@ def main(update_current=False):
     ###############################
     #Read and geocode training data
     g = geocode.Geocode()
-    training = g.process_file(opts.train_file)
+    training = g.process_file(opts.train_file, geocode=False)
     #Download current offer
     current_offer = g.process_file(StringIO(download_current()))
 
