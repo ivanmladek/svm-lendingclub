@@ -46,11 +46,16 @@ class Geocode():
         city_ix =  [ i for i, word in enumerate(state_zip_array)
                      if city.lower() in word.lower() ]
         if city_ix == []:
-            #nearest_match = zip_state[state][0]
-            distances = ([c, float(jellyfish.levenshtein_distance(
-                            c['primary_city'].lower(),
-                            city.lower()))] for c in zip_state[state])
-            nearest_match = min(distances, key = lambda x: x[1])[0]
+            try:
+                distances = ([c, float(jellyfish.levenshtein_distance(
+                                c['primary_city'].lower(),
+                                city.lower()))] for c in zip_state[state])
+                nearest_match = min(distances, key = lambda x: x[1])[0]
+            except:
+                #Sometimes there really is no match at all, return a
+                #dummy city
+                print state, zip_state[state]
+                nearest_match = zip_state['AK'][0]
         else:
             #Pick the first entry of al matching cities
             #TODO Find a way how to average all entries from let's say
@@ -65,7 +70,7 @@ class Geocode():
         is geocoded.
         """
         print type(in_file)
-        zip_state = self.read_zips_into_states("zip_code_database.csv",
+        zip_state = self.read_zips_into_states("zip_code_database_standard2.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
         #TODO Don't geocode already geocoded files
 
@@ -77,20 +82,18 @@ class Geocode():
             in_file = 'current_offers_' + \
                 datetime.now().date().strftime('%Y-%m-%d-%h')
 
-        geo_df = pd.DataFrame()
         lc = len(lending_corpus)
         matched_lending_census = [
-            [row, self.find_match_in_state(row_ix, lc,
-                                           row['addr_state'],
-                                           row['addr_city'], zip_state)]
+            row.append(self.find_match_in_state(row_ix, lc,
+                                                row['addr_state'],
+                                                row['addr_city'], zip_state))
             for row_ix, row in lending_corpus.iterrows()]
             #Merge the credit info with the census data
         print 'matching new rows'
-        new_row = [n[0].append(n[1]) for n in matched_lending_census]
-        new_df = pd.DataFrame(new_row).T
-        geo_df = geo_df.append(new_row)
-
+        #new_row = [n[0].append(n[1]) for n in matched_lending_census]
+        geo_df = pd.DataFrame(matched_lending_census)#.T
         #Write to a file
+        print 'printing new CSV'
         geo_df.to_csv(in_file+'geo',sep=',',
                           encoding='utf-8')
         print geo_df
