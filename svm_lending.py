@@ -397,13 +397,13 @@ def main(update_current=False):
     #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
-    classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
+    #classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
 
     ################################
     #Predict current_offering
-    LC.predict_current(current_offer, features_to_train,
-                       LC.common_float_columns,
-                       classifier, update_current=False)
+    #LC.predict_current(current_offer, features_to_train,
+    #                   LC.common_float_columns,
+    #                   classifier, update_current=False)
     return 0
 
 if __name__ == '__main__':

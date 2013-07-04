@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 from svm_lending import parser_options
 from datetime import datetime
+import re
 
 def dameraulevenshtein(seq1, seq2):
     """
@@ -62,9 +63,9 @@ class Geocode():
 
     def read_zips_into_states(self, filename_zip, filename_census):
         """
-        By state
+        Merge census and zip info.
         """
-        states_zip = defaultdict(lambda : defaultdict(list))
+        zipmap = defaultdict(list)
         print "Reading zips"
         z = pd.read_csv(filename_zip)
         print "Reading census"
@@ -73,33 +74,42 @@ class Geocode():
         rename_c = c.rename(columns={'GEO.id2': 'zip', '$b': 'b'})
         print 'Merging Census with zip'
         census_zip = pd.merge(rename_c,z)
+        #TODO add list into states dict
         for row_index, row in census_zip.iterrows():
-            states_zip[row['state']][row['primary_city'].lower()].append(row)
-        return states_zip
+            zipmap[row['state']].append(row)
+        return zipmap
 
     def find_match_in_state(self, state,
                             city, zip_state, alternate=False):
         """
         Find the city in the state that best matches
+        the primary_city in the state.
         """
-        all_cities = zip_state[state][city.lower()]
-        if len(all_cities) > 0:
-            #TODO Large cities span multiple zipcodes,
-            #need to return all zipcodes
-            nearest_match = all_cities[0]
-        else:
-            distances = list()
-            for k, v in zip_state[state].iteritems():
-                for c_info in v:
-                    prim_city = c_info['primary_city']
-                    d = float(dameraulevenshtein(
-                            city.lower(),
-                            prim_city.lower()))
-                    distances.append([c_info, d])
-                    if d == 0.0:
-                        break
-            nearest_match = min(distances, key = lambda x: x[1])[0]
-        return nearest_match
+        #TODO Convert zip_state to numpy array for searching for the
+        #nearest city and state
+        state_zip_array =  np.array([c['primary_city'].lower() for c in zip_state[state]])
+        city_ix =  [ i for i, word in enumerate(state_zip_array) if city.lower() in word.lower() ]
+
+        #regex = re.compile(".*("+city.lower()+").*")
+        #found_cities =  [m.group(0) for l in state_zip_array for m in [regex.search(l)] if m]
+        #print  city, state, found_cities
+
+        #nearest_match_ix = np.where(np.any(state_zip_array==city.lower(),axis=0))
+        #print city, state, state_zip_array[nearest_match_ix,:]
+        #try:
+            #nearest_match = zip_state[state][city.lower()]
+        #except:
+        #    distances = list()
+        #    for k, c_info in zip_state[state].iteritems():
+        #        prim_city = c_info['primary_city']
+        #        d = float(dameraulevenshtein(
+        #                city.lower(),
+        #                prim_city.lower()))
+        #        distances.append([c_info, d])
+        #        if d == 0.0:
+        #            break
+        #    nearest_match = min(distances, key = lambda x: x[1])[0]
+        return 0 #nearest_match
 
     def process_file(self,in_file):
         """
@@ -127,9 +137,9 @@ class Geocode():
                 row['addr_state'],
                 row['addr_city'], zip_state)
             #Merge the credit info with the census data
-            new_row = row.append(nearest_city_match)
-            new_df = pd.DataFrame(new_row).T
-            geo_df = geo_df.append(new_df)
+            #new_row = row.append(nearest_city_match)
+            #new_df = pd.DataFrame(new_row).T
+            #geo_df = geo_df.append(new_df)
         #Write to a file
         geo_df.to_csv(in_file+'geo',sep=',',
                           encoding='utf-8')
