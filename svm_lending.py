@@ -388,8 +388,8 @@ def main(update_current=False):
                       default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew.csv")
-    parser.add_option("-g", "--geocode",
-                      default='False')
+    parser.add_option("-g", "--geo",
+                      action="store_true")
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     parser.add_option("-l", "--tol",
@@ -403,12 +403,11 @@ def main(update_current=False):
     ###############################
     #Read and geocode training data
     g = geocode.Geocode()
-    geo = eval(opts.geocode)
-    training = g.process_file(opts.train_file, geocode=geo)
+    training = g.process_file(opts.train_file, geocode=opts.geo)
 
     #Download current offer
     current_offer = g.process_file(StringIO(download_current()),
-                                   geocode=geo)
+                                   geocode=opts.geo)
 
     ###############################
     #Train
