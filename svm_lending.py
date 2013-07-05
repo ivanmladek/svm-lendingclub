@@ -283,9 +283,9 @@ class SVMLending():
         X_scaled = scaler.transform(training_data)
         return X_scaled, status, scaler
 
-    def train(self, X_scaled, status):
+    def train(self, X_scaled, status, tol= 0.02):
         print "Random Forest optimization"
-        features_to_train = forest_optim(X_scaled, status)
+        features_to_train = forest_optim(X_scaled, status, FEAT_TOL=tol)
         print features_to_train
         #Perform RFE
         #print "RFE optimization"
@@ -392,6 +392,8 @@ def main(update_current=False):
                       default='False')
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
+    parser.add_option("-l", "--tol",
+                      default=0.05)
     opts, args = parser.parse_args()
     #Interpret raining years
     year_train = eval(opts.train)
@@ -411,7 +413,8 @@ def main(update_current=False):
     #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
-    classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
+    classifier, features_to_train = LC.train(LC.X_scaled, LC.status,
+                                             tol=opts.tol)
 
     #Predict out-of-sample data
     LC.predict(classifier, LC.X_scaled_test,

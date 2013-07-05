@@ -81,7 +81,7 @@ def rfe_optim(X_scaled, status):
     pl.xlabel("Number of features selected")
     pl.ylabel("Cross validation score (nb of misclassifications)")
     pl.plot(range(1, len(rfecv.cv_scores_) + 1), rfecv.cv_scores_)
-    pl.savefig('roc.png')
+    pl.savefig('rfe_optim.png')
     return rfecv.n_features_
 
 def ks_score(tpr, fpr):
@@ -99,7 +99,7 @@ def roc(X, y,classifier,  n_f=10):
     mean_tpr = 0.0
     mean_fpr = np.linspace(0, 1, 100)
     all_tpr = []
-
+    pl.figure()
     for i, (train, test) in enumerate(cv):
         probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
         # Compute ROC curve and area the curve
@@ -116,6 +116,7 @@ def roc(X, y,classifier,  n_f=10):
     mean_auc = auc(mean_fpr, mean_tpr)
     print ks_score(mean_fpr, mean_tpr)
     ks2 = ks_2samp(mean_fpr, mean_tpr)
+    print ks2
     pl.plot(mean_fpr, mean_tpr, 'k--',
             label='KS-score' % ks2[0], lw=2)
 
@@ -123,9 +124,9 @@ def roc(X, y,classifier,  n_f=10):
     pl.ylim([-0.05, 1.05])
     pl.xlabel('False Positive Rate')
     pl.ylabel('True Positive Rate')
-    pl.title('SVMScore Gains Chart')
+    pl.title('LendingSCORE Gains Chart')
     pl.legend(loc="lower right")
-    pl.show()
+    pl.savefig('roc.png')
 
 
 def forest_optim(X_scaled, status, FEAT_TOL=0.05):

@@ -99,7 +99,7 @@ class Geocode():
         else:
             lending_corpus = self.parser_options['InFun'](in_file)
             in_file = 'current_offers_' + \
-                datetime.now().date().strftime('%Y-%m-%d-%h')
+                datetime.now().strftime('%Y-%m-%d-%h')
         #Only geocode on-demand
         if geocode:
             print 'Geocoding for ',in_file
