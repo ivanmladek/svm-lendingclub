@@ -393,7 +393,8 @@ def main(update_current=False):
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     parser.add_option("-l", "--tol",
-                      default=0.05)
+                      default=0.05,
+                      type="float")
     opts, args = parser.parse_args()
     #Interpret raining years
     year_train = eval(opts.train)
