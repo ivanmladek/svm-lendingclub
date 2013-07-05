@@ -81,7 +81,7 @@ def rfe_optim(X_scaled, status):
     pl.xlabel("Number of features selected")
     pl.ylabel("Cross validation score (nb of misclassifications)")
     pl.plot(range(1, len(rfecv.cv_scores_) + 1), rfecv.cv_scores_)
-    pl.show()
+    pl.savefig('roc.png')
     return rfecv.n_features_
 
 def ks_score(tpr, fpr):
@@ -117,7 +117,7 @@ def roc(X, y,classifier,  n_f=10):
     print ks_score(mean_fpr, mean_tpr)
     ks2 = ks_2samp(mean_fpr, mean_tpr)
     pl.plot(mean_fpr, mean_tpr, 'k--',
-            label='KS-score' % ks2, lw=2)
+            label='KS-score' % ks2[0], lw=2)
 
     pl.xlim([-0.05, 1.05])
     pl.ylim([-0.05, 1.05])
@@ -163,5 +163,5 @@ def forest_optim(X_scaled, status, FEAT_TOL=0.05):
 
     pl.plot(xrange(len(importances[indices])),
             importances[indices], "b")
-    pl.show()
+    pl.savefig('random_forest_optim.png')
     return features_to_train
