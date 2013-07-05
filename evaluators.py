@@ -107,28 +107,28 @@ def roc(X, y,classifier,  n_f=10):
         mean_tpr += interp(mean_fpr, fpr, tpr)
         mean_tpr[0] = 0.0
         roc_auc = auc(fpr, tpr)
-        pl.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)'
-                % (i, roc_auc))
+        #pl.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)'
+        #        % (i, roc_auc))
     pl.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
 
     mean_tpr /= len(cv)
     mean_tpr[-1] = 1.0
     mean_auc = auc(mean_fpr, mean_tpr)
-    ks_score(mean_fpr, mean_tpr)
-    print ks_2samp(mean_fpr, mean_tpr)
+    print ks_score(mean_fpr, mean_tpr)
+    ks2 = ks_2samp(mean_fpr, mean_tpr)
     pl.plot(mean_fpr, mean_tpr, 'k--',
-            label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
+            label='KS-score' % ks2, lw=2)
 
     pl.xlim([-0.05, 1.05])
     pl.ylim([-0.05, 1.05])
     pl.xlabel('False Positive Rate')
     pl.ylabel('True Positive Rate')
-    pl.title('Receiver operating characteristic example')
+    pl.title('SVMScore Gains Chart')
     pl.legend(loc="lower right")
     pl.show()
 
 
-def forest_optim(X_scaled, status, FEAT_TOL=0.02):
+def forest_optim(X_scaled, status, FEAT_TOL=0.05):
     """
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
     plot_forest_importances.html#example-ensemble-plot-forest-importances-py

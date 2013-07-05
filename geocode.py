@@ -65,6 +65,8 @@ class Geocode():
         return nearest_match
 
     def geocode_df(self,lending_corpus, in_file):
+        #From http://factfinder2.census.gov/faces/tableservices/\
+            #jsf/pages/productview.xhtml?pid=ACS_11_5YR_DP03&prodType=table
         zip_state = self.read_zips_into_states("zip_code_database.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
         #TODO Don't geocode already geocoded files

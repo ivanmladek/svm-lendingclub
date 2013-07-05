@@ -296,19 +296,19 @@ class SVMLending():
         #Train
         classifier = train_test(X_scaled[:,features_to_train], status)
         print classifier.best_estimator_
-        print 'ROC computation'
-        roc(X_scaled[:,features_to_train], status,
-            classifier.best_estimator_)
         return classifier, features_to_train
 
     def predict(self, classifier, X_scaled_test,
                 features_to_train, status_test):
         #Predict
-        predict_test = classifier.predict(X_scaled_test[:,features_to_train])
+        predict_test = classifier.best_estimator_.predict(X_scaled_test[:,features_to_train])
 
         #Report
         print metrics.classification_report(status_test, predict_test)
         print metrics.confusion_matrix(status_test, predict_test)
+        print 'ROC computation'
+        roc(X_scaled_test[:,features_to_train], status_test,
+            classifier.best_estimator_)
         return 0
 
     def predict_current(self, current_offer, features_to_train,
