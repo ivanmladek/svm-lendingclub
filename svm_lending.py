@@ -31,6 +31,14 @@ def download_current():
     text = urllib2.urlopen(url).read()
     return text
 
+def download_portfolio():
+    url = "https://www.lendingclub.com/fileDownload.action?file=LoanStatsNew.csv&type=gen"
+    print 'Downloading portfolio from: '+url
+    text = urllib2.urlopen(url).read()
+    return text
+
+
+
 def check_funding(url):
     """
     Check realtime funding levels and only
@@ -71,7 +79,7 @@ def parse_year(date):
     try:
         return datetime.strptime(date[0:10],'%Y-%m-%d').year
     except:
-        return datetime.strptime(date[0:10],'%m-%d-%Y').year
+        return 2010#datetime.strptime(date[0:10],'%m-%d-%Y').year
 
 def parse_finite(string):
     try:
@@ -141,7 +149,8 @@ def convert_columns_float(train):
             train[c].astype('float')
             float_train.append(c)
         except:
-            print 'train can not convert: '+c
+            pass
+            #print 'train can not convert: '+c
     return float_train
 
 def columns_both_training_predict(train, test):
@@ -345,7 +354,7 @@ class SVMLending():
         curr_sorted = sorted(current_info_prob, key=itemgetter(0))
 
         #Print to a file
-        best_count = 500
+        best_count = 5000
         f = open('predicted-best.csv','w')
         for c in curr_sorted[0:best_count]:
             f.write("%s\n" % ",".join(map(str,c)))
@@ -379,6 +388,8 @@ def main(update_current=False):
                       default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew.csv")
+    parser.add_option("-g", "--geocode",
+                      default='False')
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     opts, args = parser.parse_args()
@@ -389,21 +400,28 @@ def main(update_current=False):
     ###############################
     #Read and geocode training data
     g = geocode.Geocode()
-    training = g.process_file(opts.train_file, geocode=False)
+    geo = eval(opts.geocode)
+    training = g.process_file(opts.train_file, geocode=geo)
+
     #Download current offer
-    current_offer = g.process_file(StringIO(download_current()))
+    current_offer = g.process_file(StringIO(download_current()),
+                                   geocode=geo)
 
     ###############################
     #Train
     LC = SVMLending(training, current_offer, year_train,
                     year_predict)
-    #classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
+    classifier, features_to_train = LC.train(LC.X_scaled, LC.status)
+
+    #Predict out-of-sample data
+    LC.predict(classifier, LC.X_scaled_test,
+               features_to_train, LC.status_test)
 
     ################################
     #Predict current_offering
-    #LC.predict_current(current_offer, features_to_train,
-    #                   LC.common_float_columns,
-    #                   classifier, update_current=False)
+    LC.predict_current(current_offer, features_to_train,
+                       LC.common_float_columns,
+                       classifier, update_current=False)
     return 0
 
 if __name__ == '__main__':

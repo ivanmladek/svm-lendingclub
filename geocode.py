@@ -64,8 +64,8 @@ class Geocode():
         #print city, state, nearest_match['primary_city']
         return nearest_match
 
-    def geocode_df(self,lending_corpus):
-        zip_state = self.read_zips_into_states("zip_code_database_standard2.csv",
+    def geocode_df(self,lending_corpus, in_file):
+        zip_state = self.read_zips_into_states("zip_code_database.csv",
                                                "ACS_11_5YR_DP03_with_ann.csv")
         #TODO Don't geocode already geocoded files
         lc = len(lending_corpus)
@@ -91,20 +91,20 @@ class Geocode():
         """
         print type(in_file)
         #Read file using the right parser
+        print "reading file"
         if type(in_file) == str:
             lending_corpus = self.parser_options['LoanS'](in_file)
         else:
             lending_corpus = self.parser_options['InFun'](in_file)
             in_file = 'current_offers_' + \
                 datetime.now().date().strftime('%Y-%m-%d-%h')
+        #Only geocode on-demand
         if geocode:
             print 'Geocoding for ',in_file
-            geo_df = self.geocode_df(lending_corpus)
+            geo_df = self.geocode_df(lending_corpus, in_file)
         else:
             print 'Skipping geocoding for ', in_file
             geo_df = lending_corpus
-
-
         print geo_df
         return geo_df
 
