@@ -17,7 +17,7 @@ import numpy as np
 
 import pdf as ppdf
 from evaluators import (rfe_optim, forest_optim, roc,
-                        parameters)
+                        parameters, en_params)
 import geocode
 
 #TODO AUC score function
@@ -189,6 +189,19 @@ def current_loan_parser(filename):
     entries = [lines[i].replace("\"","").split(",") for i in range(len(lines))]
     return entries
 
+
+def train_multi_test(X_scaled, status):
+    gs = []
+    for k,v in en_params.items():
+        gs.append(grid_search.GridSearchCV(v['eng'],v['params'],n_jobs=-1))
+
+    for g in gs:
+        g.fit(X_scaled, status)
+
+    for g in gs:
+        print g.best_estimator_,g.best_score_
+    return 0
+
 def train_test(X_scaled, status):
     #TODO Try more classifiers
     ##Defaults are very uneven and thus we need to give them more
@@ -294,7 +307,7 @@ class SVMLending():
         #print features_to_train[0:n_feat_optimal]
 
         #Train
-        classifier = train_test(X_scaled[:,features_to_train], status)
+        classifier = train_multi_test(X_scaled[:,features_to_train], status)
         print classifier.best_estimator_
         return classifier, features_to_train
 
@@ -415,7 +428,8 @@ def main(update_current=False):
                     year_predict)
     classifier, features_to_train = LC.train(LC.X_scaled, LC.status,
                                              tol=opts.tol)
-
+    if features_to_train == []:
+        raise Exception("No features to train on")
     #Predict out-of-sample data
     LC.predict(classifier, LC.X_scaled_test,
                features_to_train, LC.status_test)
