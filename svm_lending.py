@@ -193,14 +193,16 @@ def current_loan_parser(filename):
 def train_multi_test(X_scaled, status):
     gs = []
     for k,v in en_params.items():
-        gs.append(grid_search.GridSearchCV(v['eng'],v['params'],n_jobs=-1))
+        gs.append(grid_search.GridSearchCV(v['eng'],v['params'],n_jobs=4, verbose=3))
 
     for g in gs:
         g.fit(X_scaled, status)
 
     for g in gs:
         print g.best_estimator_,g.best_score_
-    return 0
+    #classifier = min(g, key = lambda x: x.best_score_).best_estimator_
+    print 'classifier', g
+    return g
 
 def train_test(X_scaled, status):
     #TODO Try more classifiers

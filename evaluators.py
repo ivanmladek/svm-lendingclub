@@ -33,21 +33,21 @@ en_params = {
         'eng':ens.RandomForestClassifier(),
         'params':{'n_estimators':[100,500,1000,2000,3000],
                   'min_samples_split':[2,4,6,8,10]}},
-    'ExtraForestClassifier':{
-        'eng':ens.ExtraTreesClassifier(),
-        'params':{'n_estimators':[100,500,1000,2000,3000],
-                  'min_samples_split':[2,4,6,8,10],
-                  'min_samples_leaf':[2,4,6,8,10]}},
-    'LogisticRegression':{'eng':lm.LogisticRegression(),
-                          'params':{'C':[.01,.1,10,20,30,40,50,100,200],
-                                    }},
+    #'ExtraForestClassifier':{
+    #    'eng':ens.ExtraTreesClassifier(),
+    #    'params':{'n_estimators':[100,500,1000,2000,3000],
+    #              'min_samples_split':[2,4,6,8,10],
+    #              'min_samples_leaf':[2,4,6,8,10]}},
+    #'LogisticRegression':{'eng':lm.LogisticRegression(),
+    #                      'params':{'C':[.01,.1,10,20,30,40,50,100,200],
+    #                                }},
 
-    'DecisionTrees':{'eng':tr.DecisionTreeClassifier(),
-                     'params':{
-            'min_samples_split':[2,4,6,8,10],
-            'min_samples_leaf':[2,4,6,8,10],
-            'min_density':[.05,.1,.2,.4,.6],
-            }},
+    #'DecisionTrees':{'eng':tr.DecisionTreeClassifier(),
+    #                 'params':{
+    #        'min_samples_split':[2,4,6,8,10],
+    #        'min_samples_leaf':[2,4,6,8,10],
+    #        'min_density':[.05,.1,.2,.4,.6],
+    #        }},
     }
 
 parameters = [{'C': [1],
