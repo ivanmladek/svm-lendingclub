@@ -140,6 +140,7 @@ def forest_optim(X_scaled, status, FEAT_TOL=0.05):
     http://scikit-learn.org/0.11/auto_examples/ensemble/\
     plot_forest_importances.html#example-ensemble-plot-forest-importances-py
     """
+    print 'starting Random Forest Optimization'
     # Build a forest and compute the feature importances
     forest = ExtraTreesClassifier(n_estimators=250,
                                   compute_importances=True,

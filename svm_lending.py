@@ -37,8 +37,6 @@ def download_portfolio():
     text = urllib2.urlopen(url).read()
     return text
 
-
-
 def check_funding(url):
     """
     Check realtime funding levels and only
@@ -50,7 +48,6 @@ def check_funding(url):
         return float(float_str_clean[0])
     except:
         return 0.0
-
 
 def plot_histograms(finite, check_dictionary):
     for c in check_dictionary:
@@ -185,24 +182,19 @@ def check_validity(finite):
         else:
             raise Exception(str(c+' out of bounds'))
 
-def current_loan_parser(filename):
-    """
-    Current file is mis-formatted and will not load with pandas
-    """
-    f = open(filename,'r')
-    lines = f.read().split("\n")
-    f.close()
-    entries = [lines[i].replace("\"","").split(",") for i in range(len(lines))]
-    return entries
-
-
 def train_multi_test(X_scaled, status):
+    """
+    Try all classifiers and weigh defaults more than
+    non-defaults.
+    """
     gs = []
     for k,v in en_params.items():
         gs.append(grid_search.GridSearchCV(v['eng'],v['params'],n_jobs=4, verbose=3))
 
     for g in gs:
-        g.fit(X_scaled, status)
+        g.fit(X_scaled, status,
+              sample_weight=[(c*10.)+1 for
+                             c in status])
 
     for g in gs:
         print g.best_estimator_,g.best_score_
@@ -237,8 +229,6 @@ def standard_parser(filename):
 
 parser_options = {"InFun": trailing_delimiter_parser,
                   "LoanS": standard_parser,}
-
-
 
 class SVMLending():
     """
