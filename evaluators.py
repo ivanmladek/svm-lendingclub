@@ -37,8 +37,8 @@ en_params = {
     #              'C':[.1,1,5,10,20,40,80,160,320]}},
     'RandomForestClassifier':{
         'eng':ens.RandomForestClassifier(),
-        'params':{'n_estimators':[1000,2000,3000,10000],
-                  'min_samples_split':[8,10,20,40,100]}},
+        'params':{'n_estimators':[1000,2000,3000],
+                  'min_samples_split':[8,10,20]}},
     #'ExtraForestClassifier':{
     #    'eng':ens.ExtraTreesClassifier(),
     #    'params':{'n_estimators':[100,500,1000,2000,3000],
