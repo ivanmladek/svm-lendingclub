@@ -25,14 +25,14 @@ n_samp = 1000
 svm_cs = 100000
 svm_maxiter=100000
 en_params = {
-    'Poly SVM':{
-        'eng':svm.SVC(cache_size=svm_cs,max_iter=svm_maxiter),
-        'params':{'kernel':('poly','rbf'),'degree':[2,5],
-                  'C':[.1,1,5,10,20,40,80,160,320]}},
+    #'Poly SVM':{
+    #    'eng':svm.SVC(cache_size=svm_cs,max_iter=svm_maxiter),
+    #    'params':{'kernel':('poly','rbf'),'degree':[2,5],
+    #              'C':[.1,1,5,10,20,40,80,160,320]}},
     'RandomForestClassifier':{
         'eng':ens.RandomForestClassifier(),
-        'params':{'n_estimators':[100,500,1000,2000,3000],
-                  'min_samples_split':[2,4,6,8,10]}},
+        'params':{'n_estimators':[1000,2000,3000,10000],
+                  'min_samples_split':[8,10,20,40,100]}},
     #'ExtraForestClassifier':{
     #    'eng':ens.ExtraTreesClassifier(),
     #    'params':{'n_estimators':[100,500,1000,2000,3000],
