@@ -93,6 +93,11 @@ def parse_percent(pc):
     except:
         return pc
 
+INVALID_COLUMNS = ['decommissioned','installment',
+                  'member_id', 'world_region',
+                  'longitude', 'fico_range_high',
+                  'latitude', 'fico_range_low']
+
 PURPOSE_DICT = {
     'debt_consolidation':9,
     np.nan:7.,
@@ -123,7 +128,7 @@ PURPOSE_DICT = {
     }
 
 CHECK_DICTIONARY = {
-    'fico_range_high':[600.,850.],
+    #'fico_range_high':[600.,850.],
     'annual_inc':[10000.,500000.],
     'loan_amnt':[100.,40000.],
     'dti':[0.,40.],
@@ -161,9 +166,10 @@ def columns_both_training_predict(train, test):
     #TODO remove member_id according to https://docs.google.com/document/d/1a5vasgJNoKvc2I5oG4kmXmLhISRUqdPlxm5x7Q8-mko/edit
     float_train = convert_columns_float(train)
     float_test = convert_columns_float(test)
-    return set.intersection(
+    common_set = set.intersection(
         set(float_train),
-        set(float_test)).remove('decommissioned').remove('installment').remove('member_id').remove('world_region').remove('longitude').remove('fico_range_high').remove('latitude').remove('fico_range_low')
+        set(float_test))
+    return [l for l in list(common_set) if l not in INVALID_COLUMNS]
 
 def check_validity(finite):
     """
