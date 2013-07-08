@@ -20,7 +20,7 @@ import numpy as np
 from scipy.stats import ks_2samp
 
 """
-© 2013 by SVM Risk Consulting
+Copyright 2013 by SVM Risk Consulting
 All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
 """
 
@@ -124,7 +124,7 @@ def roc(X, y,classifier,  n_f=10):
     ks2 = ks_2samp(mean_fpr, mean_tpr)
     print ks2
     pl.plot(mean_fpr, mean_tpr, 'k--',
-            label='KS-score' % ks2[0], lw=2)
+            label='KS-score: '+ks2[0], lw=2)
 
     pl.xlim([-0.05, 1.05])
     pl.ylim([-0.05, 1.05])

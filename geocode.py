@@ -8,7 +8,7 @@ import re
 import jellyfish
 
 """
-© 2013 by SVM Risk Consulting
+Copyright 2013 by SVM Risk Consulting
 All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
 """
 

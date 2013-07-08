@@ -1,6 +1,11 @@
 from fpdf import FPDF
 from datetime import datetime
 
+"""
+Copyright 2013 by SVM Risk Consulting
+All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
+"""
+
 title='Lending Club Loan Applicant Ranking - '+datetime.now().date().strftime('%Y-%m-%d')
 
 def isodd(num):
