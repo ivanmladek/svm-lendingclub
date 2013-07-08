@@ -19,6 +19,12 @@ from sklearn.ensemble import ExtraTreesClassifier
 import numpy as np
 from scipy.stats import ks_2samp
 
+"""
+© 2013 by SVM Risk Consulting
+All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
+"""
+
+
 #From
 #http://stackoverflow.com/questions/14363833/joblib-parallel-pool-closed-error
 n_samp = 1000

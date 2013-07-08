@@ -20,10 +20,10 @@ from evaluators import (rfe_optim, forest_optim, roc,
                         parameters, en_params)
 import geocode
 
-#TODO AUC score function
-#Calculate KS score for 2007,2008,2009 loans
-# TODO for each run output details into a txt with
-#columns used, model details and confusion matrix
+"""
+© 2013 by SVM Risk Consulting
+All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
+"""
 
 def download_current():
     url = "https://www.lendingclub.com/fileDownload.action?file=InFunding2StatsNew.csv&type=gen"
@@ -158,12 +158,12 @@ def columns_both_training_predict(train, test):
     Get a list of numerical columns common to both training
     and test dataset.
     """
-    #TODO remove member_id
+    #TODO remove member_id according to https://docs.google.com/document/d/1a5vasgJNoKvc2I5oG4kmXmLhISRUqdPlxm5x7Q8-mko/edit
     float_train = convert_columns_float(train)
     float_test = convert_columns_float(test)
     return set.intersection(
         set(float_train),
-        set(float_test))
+        set(float_test)).remove('decommissioned').remove('installment').remove('member_id').remove('world_region').remove('longitude').remove('fico_range_high').remove('latitude').remove('fico_range_low')
 
 def check_validity(finite):
     """
