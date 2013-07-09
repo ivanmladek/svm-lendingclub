@@ -103,9 +103,9 @@ class Geocode():
         #Read file using the right parser
         print "reading file"
         if type(in_file) == str:
-            lending_corpus = self.parser_options['LoanS'](in_file)
+            lending_corpus = self.parser_options[in_file](in_file)
         else:
-            lending_corpus = self.parser_options['InFun'](in_file)
+            lending_corpus = self.parser_options["InFunding2StatsNew.csv"](in_file)
             in_file = 'current_offers_' + \
                 datetime.now().strftime('%Y-%m-%d-%h')
         #Only geocode on-demand

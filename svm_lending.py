@@ -76,7 +76,10 @@ def parse_year(date):
     try:
         return datetime.strptime(date[0:10],'%Y-%m-%d').year
     except:
-        return 2010#datetime.strptime(date[0:10],'%m-%d-%Y').year
+        try:
+            return datetime.strptime(date[0:10],'%m-%d-%Y').year
+        except:
+            return 2100
 
 def parse_finite(string):
     try:
@@ -227,8 +230,9 @@ def trailing_delimiter_parser(filename):
 def standard_parser(filename):
     return pd.read_csv(filename)
 
-parser_options = {"InFun": trailing_delimiter_parser,
-                  "LoanS": standard_parser,}
+parser_options = {"InFunding2StatsNew.csv": trailing_delimiter_parser,
+                  "LoanStatsNew.csv": standard_parser,
+                  "LoanStatsNew_2007_2010_header.csv": standard_parser}
 
 class SVMLending():
     """
@@ -318,8 +322,8 @@ class SVMLending():
         print metrics.classification_report(status_test, predict_test)
         print metrics.confusion_matrix(status_test, predict_test)
         print 'ROC computation'
-        roc(X_scaled_test[:,features_to_train], status_test,
-            classifier.best_estimator_)
+        #roc(X_scaled_test[:,features_to_train], status_test,
+        #    classifier.best_estimator_)
         return 0
 
     def predict_current(self, current_offer, features_to_train,
@@ -357,8 +361,8 @@ class SVMLending():
                                           np.asarray(current_offer['term'])[i],
                                           np.asarray(current_offer['apr'])[i],
                                           np.asarray(current_offer['purpose'])[i],
-                                          np.asarray(current_offer['latitude'])[i],
-                                          np.asarray(current_offer['longitude'])[i],
+                                          #np.asarray(current_offer['latitude'])[i],
+                                          #np.asarray(current_offer['longitude'])[i],
                                           #current_offer['review_status'][i],
                                           ])
         #Sort list according to probabilities

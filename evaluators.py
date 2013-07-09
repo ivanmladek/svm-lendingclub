@@ -124,7 +124,7 @@ def roc(X, y,classifier,  n_f=10):
     ks2 = ks_2samp(mean_fpr, mean_tpr)
     print ks2
     pl.plot(mean_fpr, mean_tpr, 'k--',
-            label='KS-score: '+ks2[0], lw=2)
+            label='LendingScore', lw=2)
 
     pl.xlim([-0.05, 1.05])
     pl.ylim([-0.05, 1.05])
