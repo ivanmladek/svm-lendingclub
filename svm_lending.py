@@ -230,9 +230,13 @@ def trailing_delimiter_parser(filename):
 def standard_parser(filename):
     return pd.read_csv(filename)
 
+def skip_parser(filename):
+    return pd.read_csv(filename, skiprows=1)
+
 parser_options = {"InFunding2StatsNew.csv": trailing_delimiter_parser,
-                  "LoanStatsNew.csv": standard_parser,
-                  "LoanStatsNew_2007_2010_header.csv": standard_parser}
+                  "LoanStatsNew.csv": skip_parser,
+                  "LoanStatsNew_2007_2010_header.csv": standard_parser,
+                  "steve_predict3.txt": standard_parser,}
 
 class SVMLending():
     """
@@ -421,7 +425,7 @@ def main(update_current=False):
     training = g.process_file(opts.train_file, geocode=opts.geo)
 
     #Download current offer
-    current_offer = g.process_file(StringIO(download_current()),
+    current_offer = g.process_file(opts.test_file,#StringIO(download_current()),
                                    geocode=opts.geo)
 
     ###############################
