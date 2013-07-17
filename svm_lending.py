@@ -330,6 +330,12 @@ class SVMLending():
         #    classifier.best_estimator_)
         return 0
 
+    def best_available_status(self, df,i):
+        try:
+            return current_offer['loan_status'][i]
+        except:
+            return current_offer['review_status'][i]
+        
     def predict_current(self, current_offer, features_to_train,
                         common_float_columns,
                         classifier, update_current=False):
@@ -367,7 +373,7 @@ class SVMLending():
                                           np.asarray(current_offer['purpose'])[i],
                                           #np.asarray(current_offer['latitude'])[i],
                                           #np.asarray(current_offer['longitude'])[i],
-                                          #current_offer['review_status'][i],
+                                          self.best_available_status(current_offer, i),
                                           ])
         #Sort list according to probabilities
         curr_sorted = sorted(current_info_prob, key=itemgetter(0))
