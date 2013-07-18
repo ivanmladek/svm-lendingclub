@@ -49,7 +49,7 @@ class PDF(FPDF):
                 #Line break
                 self.ln(4)
 
-        def chapter_body(self,name, offset):
+        def chapter_body(self,name, offset, red_threshold=90.):
                 #Read text file
                 txt=file(name).read()
                 #Times 12
@@ -98,9 +98,9 @@ class PDF(FPDF):
                     try:
                         #default, status, offid, url,amnt,funded_amnt, term,  apr, purpose, lat, lon = t.split(",")
                         default, status, offid, url, amnt, \
-                            funded_amnt, term,  apr, purpose,best_status = t.split(",")
+                            funded_amnt, term,  apr, purpose, best_status = t.split(",")
                         d_f = float(default.replace("[",""))*100
-                        if d_f < 30.:
+                        if d_f < red_threshold:
                             self.set_fill_color(127,255,0)
                         else:
                             self.set_fill_color(255,0,0)
@@ -125,7 +125,7 @@ class PDF(FPDF):
                                   border=1, fill=1,)
                         self.cell(40, 5 , purpose.replace("'",""),
                                   border=1, fill=1,)
-                        self.cell(30, 5 , best_xstatus,
+                        self.cell(30, 5 , best_status,
                                   border=1, fill=1,)
                         #Line break
                         self.ln()

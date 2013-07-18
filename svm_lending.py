@@ -96,7 +96,8 @@ def parse_percent(pc):
 INVALID_COLUMNS = ['decommissioned','installment',
                   'member_id', 'world_region',
                   'longitude', 'fico_range_high',
-                  'latitude', 'fico_range_low']
+                  'latitude', 'fico_range_low',
+                   'last_fico_range_low', 'last_fico_range_high']
 
 PURPOSE_DICT = {
     'debt_consolidation':9,
@@ -330,7 +331,7 @@ class SVMLending():
         #    classifier.best_estimator_)
         return 0
 
-    def best_available_status(self, df,i):
+    def best_available_status(self, current_offer, i):
         try:
             return current_offer['loan_status'][i]
         except:
@@ -396,9 +397,9 @@ class SVMLending():
         pdf.set_author('SVM Risk Consulting')
         pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
                           'predicted-best.csv')
-        pdf.print_chapter(len(curr_sorted) - best_count,
-                          'RATING OF BORROWERS - WORST '+str(best_count),
-                          'predicted-worst.csv')
+        #pdf.print_chapter(len(curr_sorted) - best_count,
+        #                  'RATING OF BORROWERS - WORST '+str(best_count),
+        #                  'predicted-worst.csv')
         filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
         pdf.output(filename,'F')
         return 0
@@ -418,7 +419,7 @@ def main(update_current=False):
     parser.add_option("-i", "--test_file",
                       default="InFunding2StatsNew.csv")
     parser.add_option("-l", "--tol",
-                      default=0.05,
+                      default=0.02,
                       type="float")
     opts, args = parser.parse_args()
     #Interpret raining years
