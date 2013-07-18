@@ -26,7 +26,7 @@ All rights reserved. No part of this document may be reproduced or transmitted i
 """
 
 def download_current():
-    url = "https://www.lendingclub.com/fileDownload.action?file=InFunding2StatsNew.csv&type=gen"
+    url = "https://www.lendingclub.com/browse/browseNotesRawDataV6.action"
     print 'Downloading current offers from: '+url
     text = urllib2.urlopen(url).read()
     return text
