@@ -94,7 +94,7 @@ class Geocode():
                           encoding='utf-8')
         return geo_df
 
-    def process_file(self,in_file, geocode=True):
+    def process_file(self,in_file, parser, geocode=True):
         """
         Geocode file and return a new Pandas DataFrame which
         is geocoded.
@@ -102,10 +102,10 @@ class Geocode():
         print type(in_file)
         #Read file using the right parser
         print "reading file"
+        lending_corpus = parser(in_file)
         if type(in_file) == str:
-            lending_corpus = self.parser_options[in_file](in_file)
+            pass
         else:
-            lending_corpus = self.parser_options["InFunding2StatsNew.csv"](in_file)
             in_file = 'current_offers_' + \
                 datetime.now().strftime('%Y-%m-%d-%h')
         #Only geocode on-demand

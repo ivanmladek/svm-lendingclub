@@ -429,10 +429,13 @@ def main(update_current=False):
     ###############################
     #Read and geocode training data
     g = geocode.Geocode()
-    training = g.process_file(opts.train_file, geocode=opts.geo)
+    training = g.process_file(StringIO(download_portfolio()),
+                              skip_parser,
+                              geocode=opts.geo)
 
     #Download current offer
-    current_offer = g.process_file(opts.test_file,#StringIO(download_current()),
+    current_offer = g.process_file(StringIO(download_current()),
+                                   trailing_delimiter_parser,
                                    geocode=opts.geo)
 
     ###############################
