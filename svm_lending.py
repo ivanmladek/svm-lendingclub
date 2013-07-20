@@ -25,11 +25,20 @@ Copyright 2013 by SVM Risk Consulting
 All rights reserved. No part of this document may be reproduced or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without prior written permission of SVM Risk Consulting.
 """
 
-def download_current():
-    url = "https://www.lendingclub.com/browse/browseNotesRawDataV6.action"
-    print 'Downloading current offers from: '+url
+def download_last_night_current():
+    url="https://www.lendingclub.com/fileDownload.action?file=InFunding2StatsNew.csv&type=gen"
+    print 'Downloading portfolio from: '+url
     text = urllib2.urlopen(url).read()
     return text
+
+def download_current():
+    url = "https://www.lendingclub.com/browse/browseNotesRawDataV6.action"
+    cookie = 'reg_referrer=Google_Brand; param1=80019; param2=GzB001zA002z1zDzg; url=http%3A//www.google.com/aclk%3Fsa%3Dl%26ai%3DCmacsnK3nUczxB4XCiwKowYGABv-wp90Dp82M4mu578aAAggAEAEoAlCptoz8BWDJ9viGyKOgGaAB8cOS8wPIAQGqBCJP0BB3UAYAkIU470kBivw6tDnl23ksA1vyD6q1sbSAa9fMgAf3u-0M%26sig%3DAOD64_3o78mfXD_qwEfInm4BkUREpZ5fpg%26rct%3Dj%26q%3Dlending+club%26ved%3D0CDIQ0Qw%26adurl%3Dhttps%3A//www.lendingclub.com/landing/partner.action%253FpartnerID%253D80019%2526param2%253DGzB001zA002z1zDzg; mbox=PC#1374127887114-70533.19_18#1375347370|check#true#1374137830|session#1374137769760-456230#1374139630; www.lendingclub.com-prod_lcui_grp=DODCKIMA; s_vnum=1376630176745%26vn%3D9; JSESSIONID-lcui-prod_nevada_services_a=D7F1310A3FD24B292DA177DD5D730CF4; LC_FIRSTNAME=Pavel; s_cc=true; s_vi=[CS]v1|28F31450050134E4-600016034014F51C[CE]; OMNITURE_USER_TRACKING2=registeredInvestor; s_invisit=true; s_sq=lcprod%3D%2526pid%253DInvesting%252520%25253A%252520Browse%252520%25253A%252520Notes%252520%25253A%252520Authenticated%2526pidt%253D1%2526oid%253Dhttps%25253A%25252F%25252Fwww.lendingclub.com%25252Fbrowse%25252FbrowseNotesRawDataV6.action_1%2526oidt%253D1%2526ot%253DA%2526oi%253D1'
+    print 'Downloading current offers from: '+url
+    text = urllib2.Request(url)
+    text.add_header('Cookie', cookie)
+    raw = urllib2.urlopen(text).read()
+    return raw
 
 def download_portfolio():
     url = "https://www.lendingclub.com/fileDownload.action?file=LoanStatsNew.csv&type=gen"
@@ -429,14 +438,13 @@ def main(update_current=False):
     ###############################
     #Read and geocode training data
     g = geocode.Geocode()
+    #Download current offer
+    current_offer = g.process_file(StringIO(download_last_night_current()),
+                                   trailing_delimiter_parser,
+                                   geocode=opts.geo)
     training = g.process_file(StringIO(download_portfolio()),
                               skip_parser,
                               geocode=opts.geo)
-
-    #Download current offer
-    current_offer = g.process_file(StringIO(download_current()),
-                                   trailing_delimiter_parser,
-                                   geocode=opts.geo)
 
     ###############################
     #Train
