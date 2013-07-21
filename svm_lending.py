@@ -444,6 +444,7 @@ def main(update_current=False):
             features_to_train = pickle.load(fp)
             scaler_init = pickle.load(fp)
             common_float_columns = pickle.load(fp)
+        print classifier, features_to_train, common_float_columns
     except IOError:
         print 'Training from scratch.'
         training = g.process_file(opts.train_file,#StringIO(download_portfolio()),
