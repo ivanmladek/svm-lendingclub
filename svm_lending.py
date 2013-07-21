@@ -316,7 +316,7 @@ class SVMLending():
     def predict(self, classifier, X_scaled_test,
                 features_to_train, status_test):
         #Predict
-        predict_test = classifier.best_estimator_.predict(X_scaled_test[:,features_to_train])
+        predict_test = classifier.predict(X_scaled_test[:,features_to_train])
 
         #Report
         print metrics.classification_report(status_test, predict_test)
