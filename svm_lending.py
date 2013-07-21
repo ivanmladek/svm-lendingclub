@@ -253,12 +253,8 @@ class SVMLending():
     Training and preciting class for SVM credit scoring of Lending Club loans.
     """
 
-    def __init__(self, training, current_offer, year_train, year_predict):
-        print year_train, year_predict
-        self.common_float_columns = columns_both_training_predict(
-        training, current_offer)
-        print self.common_float_columns
-        print training, current_offer
+    def __init__(self):
+        pass
        
     def prepare_data_for_year(self, training, target_y, float_columns,
                               def_scaler=None):
@@ -432,14 +428,11 @@ def main(update_current=False):
     current_offer = g.process_file(StringIO(download_last_night_current()),
                                    trailing_delimiter_parser,
                                    geocode=opts.geo)
-    training = g.process_file(opts.train_file,#StringIO(download_portfolio()),
-                              skip_parser,
-                              geocode=opts.geo)
+ 
 
     ###############################
     #Train
-    LC = SVMLending(training, current_offer, year_train,
-                    year_predict)
+    LC = SVMLending()
 
     #If no pickled classifier is present then train otherwise just
     #read the classified
@@ -450,17 +443,26 @@ def main(update_current=False):
             classifier = pickle.load(fp)
             features_to_train = pickle.load(fp)
             scaler_init = pickle.load(fp)
+            common_float_columns = pickle.load(fp)
     except IOError:
         print 'Training from scratch.'
-         #Base training data
+        training = g.process_file(opts.train_file,#StringIO(download_portfolio()),
+                                  skip_parser,
+                                  geocode=opts.geo)
+        print year_train, year_predict
+        common_float_columns = columns_both_training_predict(
+            training, current_offer)
+        print common_float_columns
+        print training, current_offer
+        #Base training data
         X_scaled, status, scaler_init = \
-            self.prepare_data_for_year(training, year_train,
-                                       self.common_float_columns,
+            LC.prepare_data_for_year(training, year_train,
+                                       common_float_columns,
                                        def_scaler=None)
         #Out of sample test data
         X_scaled_test, status_test, _ = \
-            self.prepare_data_for_year(training, year_predict,
-                                       self.common_float_columns,
+            LC.prepare_data_for_year(training, year_predict,
+                                       common_float_columns,
                                        def_scaler=scaler_init)
 
         classifier, features_to_train = LC.train(X_scaled, status,
@@ -469,6 +471,7 @@ def main(update_current=False):
             pickle.dump(classifier, fp)
             pickle.dump(features_to_train, fp)
             pickle.dump(scaler_init, fp)
+            pickle.dump(common_float_columns, fp)
         #Predict out-of-sample data
         LC.predict(classifier, X_scaled_test,
                    features_to_train, status_test)
@@ -479,7 +482,7 @@ def main(update_current=False):
     ################################
     #Predict current_offering
     LC.predict_current(current_offer, features_to_train,
-                       LC.common_float_columns,
+                       common_float_columns,
                        classifier, scaler_init, update_current=False)
     return 0
 
