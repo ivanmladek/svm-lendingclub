@@ -361,6 +361,9 @@ class SVMLending():
             else:
                 funded_pcnt = 0.
             if funded_pcnt < 100.:
+                #Calculate ROI in terms of LC APR divided by our risk
+                ROI = float(current_offer['apr'][i]) / float(predict_prob[i][1] *100.)
+                print current_offer['apr'][i], predict_prob[i][1] *100., ROI
                 current_info_prob.append([predict_prob[i][1],
                                           predict_offer[i],
                                           np.asarray(current_offer['id'])[i],
@@ -373,23 +376,27 @@ class SVMLending():
                                           np.asarray(current_offer['latitude'])[i],
                                           np.asarray(current_offer['longitude'])[i],
                                           self.best_available_status(current_offer, i),
+                                          ROI,
                                           ])
         #Sort list according to probabilities
         curr_sorted = sorted(current_info_prob, key=itemgetter(0))
+        #Best ROI
+        ROI_sorted = sorted(current_info_prob, key=itemgetter(12), reverse=True)
+
 
         #Print to a file
-        best_count = 5000
+        best_count = 20
         f = open('predicted-best.csv','w')
         f.write("prob,prob_flag,id,url,loan_amnt,funded_amnt,term,apr,purpose,latitude,longtidue,status\n")            
-        for c in curr_sorted[0:best_count]:
+        for c in ROI_sorted[0:best_count]:
             f.write("%s\n" % ",".join(map(str,c)))
         f.close()
 
         #TODO separate Plot PDF
         pdf=ppdf.PDF()
-        pdf.set_title('Lending Club Loan Applicant Ranking')
+        pdf.set_title('Best current Lending Club loans - ROI')
         pdf.set_author('SVM Risk Consulting')
-        pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
+        pdf.print_chapter(1,'BEST '+str(best_count)+' LOANS IN TERMS OF ROI',
                           'predicted-best.csv')
         filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
         pdf.output(filename,'F')

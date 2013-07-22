@@ -61,6 +61,10 @@ class PDF(FPDF):
                           border=1, fill=1,)
                 self.cell(30, 5 , 'Probability of default %',
                           border=1, fill=1,)
+                self.cell(12, 5 , 'APR %',
+                          border=1, fill=1,)
+                self.cell(12, 5 , 'ROI',
+                          border=1, fill=1,)
                 self.cell(15, 5 , 'Offer id',
                           border=1, fill=1,)
                 self.cell(20, 5 , 'Loan amount',
@@ -69,16 +73,19 @@ class PDF(FPDF):
                           border=1, fill=1,)
                 self.cell(10, 5 , 'Term',
                           border=1, fill=1,)
-                self.cell(12, 5 , 'APR %',
-                          border=1, fill=1,)
+
                 self.cell(40, 5 , 'Purpose',
                           border=1, fill=1,)
-                self.cell(30, 5 , 'Status',
+                self.cell(20, 5 , 'Status',
                           border=1, fill=1,)
                 self.ln()
                 self.cell(15, 5 , '[SVM Cons]',
                           border=1, fill=1,)
                 self.cell(30, 5 , '[SVM Consulting]',
+                          border=1, fill=1,)
+                self.cell(12, 5 , '[LC]',
+                          border=1, fill=1,)
+                self.cell(12, 5 , '[SVM]',
                           border=1, fill=1,)
                 self.cell(15, 5 , '[LendingC]',
                           border=1, fill=1,)
@@ -88,18 +95,17 @@ class PDF(FPDF):
                           border=1, fill=1,)
                 self.cell(10, 5 , '[LC]',
                           border=1, fill=1,)
-                self.cell(12, 5 , '[LC]',
-                          border=1, fill=1,)
+
                 self.cell(40, 5 , '[LendingClub]',
                           border=1, fill=1,)
-                self.cell(30, 5 , '[LendingClub]',
+                self.cell(20, 5 , '[LendingClub]',
                           border=1, fill=1,)
                 self.ln()
                 for i,t in enumerate(txt.split("\n")):
                     try:
                         default, status, offid, url,amnt,funded_amnt, \
                             term,  apr, purpose, lat, lon, \
-                            best_status = t.split(",")
+                            best_status, ROI = t.split(",")
                         d_f = float(default.replace("[",""))*100
                         if d_f < yellow_threshold:
                             self.set_fill_color(127,255,0)
@@ -115,21 +121,24 @@ class PDF(FPDF):
                         #else:
                         #    self.set_fill_color(230,230,230)
                         self.cell(30, 5 , str(d_f)[0:5]+'%',
-                                  border=1, fill=1,)
+                                  border=1, fill=1,link=url)
+                        self.cell(12, 5 , apr[0:5]+'%',
+                                  border=1, fill=1,link=url)
+                        self.cell(12, 5 , str(float(ROI)*100.)[0:4],
+                                  border=1, fill=1,link=url)
                         self.cell(15, 5 , offid,
                                   border=1, fill=1,link=url)
                         self.cell(20, 5 , amnt,
-                                  border=1, fill=1,)
+                                  border=1, fill=1,link=url)
                         self.cell(20, 5 , funded_amnt,
-                                  border=1, fill=1,)
+                                  border=1, fill=1,link=url)
                         self.cell(10, 5 , term,
-                                  border=1, fill=1,)
-                        self.cell(12, 5 , apr[0:5]+'%',
-                                  border=1, fill=1,)
+                                  border=1, fill=1,link=url)
+
                         self.cell(40, 5 , purpose.replace("'",""),
-                                  border=1, fill=1,)
-                        self.cell(30, 5 , best_status,
-                                  border=1, fill=1,)
+                                  border=1, fill=1,link=url)
+                        self.cell(20, 5 , best_status,
+                                  border=1, fill=1,link=url)
                         #Line break
                         self.ln()
                     except:
