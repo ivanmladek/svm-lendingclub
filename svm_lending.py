@@ -3,6 +3,8 @@ from sklearn import (svm, preprocessing,
                      grid_search, metrics,
                      cross_validation)
 import cPickle as pickle
+import subprocess
+
 from sklearn.metrics import (zero_one_loss,
                              recall_score)
 from StringIO import StringIO
@@ -397,6 +399,9 @@ class SVMLending():
         #                  'predicted-worst.csv')
         filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
         pdf.output(filename,'F')
+
+        #Upload to CartoDB
+        subprocess.check_output(['./cartodb_up.sh', 'ivanmladek', '9e2d9aebc7a967b3d50ee1fd7af85ec629624183','predicted-best.csv'])
         return 0
 
 
@@ -408,7 +413,7 @@ def main(update_current=False):
     parser.add_option("-p", "--process",
                       default='[2009]')
     parser.add_option("-f", "--train_file",
-                      default="LoanStatsNew.csv")
+                      default="LoanStatsNew_2007_2010_header.csv")
     parser.add_option("-g", "--geo",
                       action="store_true")
     parser.add_option("-i", "--test_file",
