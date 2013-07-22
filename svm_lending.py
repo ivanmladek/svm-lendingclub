@@ -205,7 +205,8 @@ def train_multi_test(X_scaled, status):
     """
     gs = []
     for k,v in en_params.items():
-        gs.append(grid_search.GridSearchCV(v['eng'],v['params'],n_jobs=4, verbose=3))
+        gs.append(grid_search.GridSearchCV(v['eng'],v['params'],
+                                           n_jobs=-1, verbose=3))
 
     for g in gs:
         g.fit(X_scaled, status,
@@ -226,7 +227,7 @@ def train_test(X_scaled, status):
         svm.SVC(C=1, probability=True),
         parameters,# zero_one_loss,
         cv=5,
-        verbose=3, n_jobs=4,)
+        verbose=3, n_jobs=-1,)
     print 'training'
     classifier.fit(X_scaled, status)
     print 'done training'
