@@ -49,7 +49,8 @@ class PDF(FPDF):
                 #Line break
                 self.ln(4)
 
-        def chapter_body(self,name, offset, red_threshold=90.):
+        def chapter_body(self,name, offset, yellow_threshold=30.,
+                         red_threshold=60.):
                 #Read text file
                 txt=file(name).read()
                 #Times 12
@@ -100,8 +101,10 @@ class PDF(FPDF):
                             term,  apr, purpose, lat, lon, \
                             best_status = t.split(",")
                         d_f = float(default.replace("[",""))*100
-                        if d_f < red_threshold:
+                        if d_f < yellow_threshold:
                             self.set_fill_color(127,255,0)
+                        elif d_f < red_threshold:
+                            self.set_fill_color(255,255,0)
                         else:
                             self.set_fill_color(255,0,0)
                         self.cell(15, 5 , str(i+offset),

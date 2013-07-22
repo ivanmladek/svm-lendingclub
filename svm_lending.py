@@ -20,6 +20,7 @@ import numpy as np
 import pdf as ppdf
 from evaluators import (rfe_optim, forest_optim, roc,
                         parameters, en_params)
+from attachement import send_mail, message, title
 import geocode
 
 """
@@ -394,7 +395,14 @@ class SVMLending():
         pdf.output(filename,'F')
 
         #Upload to CartoDB
-        subprocess.check_output(['./cartodb_up.sh', 'ivanmladek', '9e2d9aebc7a967b3d50ee1fd7af85ec629624183','predicted-best.csv'])
+        #subprocess.check_output(['./cartodb_up.sh', 'ivanmladek', '9e2d9aebc7a967b3d50ee1fd7af85ec629624183','predicted-best.csv'])
+
+        #Email to addressees
+        
+        send_mail("ivanmladek@gmail.com",
+                  ["ivanmladek@gmail.com"],title,
+                  message, files=[filename])
+
         return 0
 
 
