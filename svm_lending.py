@@ -369,8 +369,8 @@ class SVMLending():
                                           np.asarray(current_offer['term'])[i],
                                           np.asarray(current_offer['apr'])[i],
                                           np.asarray(current_offer['purpose'])[i],
-                                          #np.asarray(current_offer['latitude'])[i],
-                                          #np.asarray(current_offer['longitude'])[i],
+                                          np.asarray(current_offer['latitude'])[i],
+                                          np.asarray(current_offer['longitude'])[i],
                                           self.best_available_status(current_offer, i),
                                           ])
         #Sort list according to probabilities
@@ -379,14 +379,10 @@ class SVMLending():
         #Print to a file
         best_count = 5000
         f = open('predicted-best.csv','w')
+        f.write("prob,prob_flag,id,url,loan_amnt,funded_amnt,term,apr,purpose,latitude,longtidue,status\n")            
         for c in curr_sorted[0:best_count]:
             f.write("%s\n" % ",".join(map(str,c)))
         f.close()
-        f1 = open('predicted-worst.csv','w')
-        for c in curr_sorted[-1*best_count:]:
-            f1.write("%s\n" % ",".join(map(str,c)))
-        f1.close()
-
 
         #TODO separate Plot PDF
         pdf=ppdf.PDF()
@@ -394,9 +390,6 @@ class SVMLending():
         pdf.set_author('SVM Risk Consulting')
         pdf.print_chapter(1,'RATING OF BORROWERS - BEST '+str(best_count),
                           'predicted-best.csv')
-        #pdf.print_chapter(len(curr_sorted) - best_count,
-        #                  'RATING OF BORROWERS - WORST '+str(best_count),
-        #                  'predicted-worst.csv')
         filename = 'SVM_Consulting_LendingClub_Ranking_'+datetime.now().date().strftime('%Y_%m_%d')+".pdf"
         pdf.output(filename,'F')
 
