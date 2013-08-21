@@ -411,7 +411,10 @@ class SVMLending():
         #Email to addressees
         
         send_mail("ivanmladek@gmail.com",
-                  ["ivanmladek@gmail.com"],title,
+                  ["ivanmladek@gmail.com",
+                   "ben@somethingmodern.com",
+                   "jon@gelsey.com", 
+                   "stevecoast@gmail.com"],title,
                   message, files=[filename])
 
         return 0
