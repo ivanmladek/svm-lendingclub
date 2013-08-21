@@ -374,15 +374,18 @@ class SVMLending():
                                           np.asarray(current_offer['term'])[i],
                                           np.asarray(current_offer['apr'])[i],
                                           np.asarray(current_offer['purpose'])[i],
-                                          np.asarray(current_offer['latitude'])[i],
-                                          np.asarray(current_offer['longitude'])[i],
+                                          #np.asarray(current_offer['latitude'])[i],
+                                          #np.asarray(current_offer['longitude'])[i],
                                           self.best_available_status(current_offer, i),
                                           ROI,
                                           ])
         #Sort list according to probabilities
         curr_sorted = sorted(current_info_prob, key=itemgetter(0))
         #Best ROI
-        ROI_sorted = sorted(current_info_prob, key=itemgetter(12), reverse=True)
+        ROI_sorted = sorted(current_info_prob,
+                            # key=itemgetter(12),
+                            key=itemgetter(10),
+                            reverse=True)
 
 
         #Print to a file
@@ -423,6 +426,7 @@ def main(update_current=False):
                       default='[2009]')
     parser.add_option("-f", "--train_file",
                       default="LoanStatsNew_2007_2010_header.csv")
+                      #default="LoanStatsNew.csv")
     parser.add_option("-g", "--geo",
                       action="store_true")
     parser.add_option("-i", "--test_file",

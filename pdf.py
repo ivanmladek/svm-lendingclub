@@ -104,8 +104,7 @@ class PDF(FPDF):
                 for i,t in enumerate(txt.split("\n")):
                     try:
                         default, status, offid, url,amnt,funded_amnt, \
-                            term,  apr, purpose, lat, lon, \
-                            best_status, ROI = t.split(",")
+                            term,  apr, purpose, best_status, ROI = t.split(",")
                         d_f = float(default.replace("[",""))*100
                         if d_f < yellow_threshold:
                             self.set_fill_color(127,255,0)
